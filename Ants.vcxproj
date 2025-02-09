@@ -222,6 +222,8 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
+    <ClCompile Include="Source\Components\AntBaseComponent.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
     <ClCompile Include="Source\Core\Precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">Create</PrecompiledHeader>
@@ -232,6 +234,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
+    <ClInclude Include="Include\Components\AntBaseComponent.h" />
+    <ClInclude Include="Include\Components\FoodPelletTag.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
