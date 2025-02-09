@@ -222,6 +222,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Commands\InteractCommand.cpp" />
     <ClCompile Include="Source\Commands\MoveCommand.cpp" />
     <ClCompile Include="Source\Systems\AntBehaviourSystem.cpp" />
     <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
@@ -239,6 +240,7 @@
     <ClInclude Include="Include\Ants\Precomp.h" />
     <ClInclude Include="Include\Commands\CommandBase.h" />
     <ClInclude Include="Include\Commands\CommandBuffer.h" />
+    <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />

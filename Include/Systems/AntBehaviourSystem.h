@@ -2,6 +2,7 @@
 #include <future>
 
 #include "Commands/CommandBuffer.h"
+#include "Commands/InteractCommand.h"
 #include "Commands/MoveCommand.h"
 #include "Systems/System.h"
 #include "Utilities/Events.h"
@@ -37,6 +38,7 @@ namespace Ant
 		void Update(CE::World& world, float dt) override;
 
 		CommandBuffer<MoveCommand> mMoveCommandBuffer{};
+		CommandBuffer<InteractCommand> mInteractCommandBuffer{};
 
 	private:
 		std::future<void> mCollectCommandsFuture{};

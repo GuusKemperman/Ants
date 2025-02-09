@@ -7,11 +7,11 @@
 
 void Ant::MoveCommand::Execute(CE::World& world, std::span<const MoveCommand> commands)
 {
-	auto transformView = world.GetRegistry().View<AntBaseComponent>();
+	auto antView = world.GetRegistry().View<AntBaseComponent>();
 
 	for (const MoveCommand& command : commands)
 	{
-		AntBaseComponent& ant = transformView.get<AntBaseComponent>(command.mAnt);
+		AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
 
 		ant.mPreviousWorldPosition = std::exchange(ant.mWorldPosition, command.mNewPosition);
 		ant.mPreviousWorldOrientation = std::exchange(ant.mWorldOrientation, command.mNewOrientation);

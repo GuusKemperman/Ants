@@ -10,7 +10,9 @@ namespace Ant
 {
 	struct SenseResult
 	{
-		bool HitFood(const CE::World& world) const;
+		bool SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const;
+
+		bool SensedFood(const CE::World& world) const;
 
 		float GetDistance() const;
 
@@ -32,7 +34,9 @@ namespace Ant
 
 		// static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
-		// static void PickUp(const CE::World& world, entt::entity owner);
+		static constexpr float sInteractRange = 2.0f;
+
+		static void Interact(CE::World& world, entt::entity owner);
 
 		// static void Drop(const CE::World& world, entt::entity owner);
 
@@ -48,9 +52,9 @@ namespace Ant
 		glm::vec2 mWorldPosition{};
 		glm::quat mWorldOrientation{};
 
-	private:
-		float mEnergy = 100.0f;
+		bool mIsHoldingFood{};
 
+	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(AntBaseComponent);

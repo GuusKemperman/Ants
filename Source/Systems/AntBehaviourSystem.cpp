@@ -14,7 +14,7 @@ namespace Internal
 	{
 		auto antView = world.GetRegistry().View<Ant::AntBaseComponent>();
 
-		T::Execute(world, commandBuffer.mCommands);
+		T::Execute(world, commandBuffer.GetSubmittedCommands());
 
 		commandBuffer.Clear();
 		commandBuffer.mCommands.resize(antView.size());
@@ -37,11 +37,13 @@ void Ant::AntBehaviourSystem::Update(CE::World& world, float)
 	}
 
 	Internal::ProcessCommands(world, mMoveCommandBuffer);
+	Internal::ProcessCommands(world, mInteractCommandBuffer);
 
-	mCollectCommandsFuture = CE::ThreadPool::Get().Enqueue([&world]()
+	//mCollectCommandsFuture = CE::ThreadPool::Get().Enqueue([&world]()
 		{
 			world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
-		});
+		}
+	//);
 }
 
 CE::MetaType Ant::AntBehaviourSystem::Reflect()

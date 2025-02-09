@@ -11,6 +11,8 @@
 
 void Ant::AntBaseComponent::OnBeginPlay(CE::World& world, entt::entity owner)
 {
+	world.SetTimeScale(10.0f);
+
 	CE::Registry& reg = world.GetRegistry();
 	CE::TransformComponent* antTransform = reg.TryGet<CE::TransformComponent>(owner);
 
@@ -25,6 +27,27 @@ void Ant::AntBaseComponent::OnBeginPlay(CE::World& world, entt::entity owner)
 
 	mPreviousWorldOrientation = antTransform->GetWorldOrientation();
 	mWorldOrientation = mPreviousWorldOrientation;
+}
+
+void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
+{
+	SenseResult result = Sense(world, owner, CE::sForward * sInteractRange);
+
+	if (result.mHitEntity == entt::null)
+	{
+		LOG(LogGame, Verbose, "Cannot interact, no interactable in range");
+		return;
+	}
+
+	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
+
+	if (antSystem == nullptr)
+	{
+		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
+		return;
+	}
+
+	antSystem->mInteractCommandBuffer.AddCommand(CommandBase{ owner }, result.mHitEntity);
 }
 
 void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
@@ -59,7 +82,7 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 		return;
 	}
 
-	antSystem->mMoveCommandBuffer.AddCommand(MoveCommand{ CommandBase{ owner }, newPosition, newOrientation });
+	antSystem->mMoveCommandBuffer.AddCommand(CommandBase{ owner }, newPosition, newOrientation);
 }
 
 Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
@@ -110,10 +133,15 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 	return senseResult;
 }
 
-bool Ant::SenseResult::HitFood(const CE::World& world) const
+bool Ant::SenseResult::SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const
 {
 	return mHitEntity != entt::null
-		&& world.GetRegistry().HasComponent<FoodPelletTag>(mHitEntity);
+		&& world.GetRegistry().HasComponent(componentTypeId, mHitEntity);
+}
+
+bool Ant::SenseResult::SensedFood(const CE::World& world) const
+{
+	return SensedComponent(world, CE::MakeTypeId<FoodPelletTag>());
 }
 
 float Ant::SenseResult::GetDistance() const
@@ -129,7 +157,7 @@ CE::MetaType Ant::SenseResult::Reflect()
 		.Add(CE::Props::sIsScriptOwnableTag)
 		.Add(CE::Props::sIsScriptableTag);
 
-	metaType.AddFunc(&SenseResult::HitFood, "HitFood").GetProperties().Add(CE::Props::sIsScriptableTag);
+	metaType.AddFunc(&SenseResult::SensedFood, "SensedFood").GetProperties().Add(CE::Props::sIsScriptableTag);
 	metaType.AddFunc(&SenseResult::GetDistance, "GetDistance").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	return metaType;
@@ -149,6 +177,14 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 	metaType.AddFunc(&AntBaseComponent::Move, "Move").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
+
+	metaType.AddFunc(&AntBaseComponent::Interact, "Interact").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, false);
+
+	metaType.AddFunc([] { return sInteractRange;  }, "GetInteractRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
 
 	CE::BindEvent(metaType, CE::sOnBeginPlay, &AntBaseComponent::OnBeginPlay);
 
