@@ -5,10 +5,11 @@
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
+#include "Systems/AntBehaviourSystem.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
+void Ant::AntBaseComponent::OnBeginPlay(CE::World& world, entt::entity owner)
 {
 	CE::Registry& reg = world.GetRegistry();
 	CE::TransformComponent* antTransform = reg.TryGet<CE::TransformComponent>(owner);
@@ -19,45 +20,74 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 		return;
 	}
 
+	mPreviousWorldPosition = antTransform->GetWorldPosition();
+	mWorldPosition = mPreviousWorldPosition;
+
+	mPreviousWorldOrientation = antTransform->GetWorldOrientation();
+	mWorldOrientation = mPreviousWorldOrientation;
+}
+
+void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
+{
 	if (towardsLocation == glm::vec2{})
 	{
 		return;
 	}
 
-	const glm::vec2 start = antTransform->GetWorldPosition();
-	const glm::vec2 end = start + CE::To2D(
-		CE::Math::RotateVector(CE::To3D(towardsLocation), antTransform->GetWorldOrientation()));
+	CE::Registry& reg = world.GetRegistry();
+	AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
 
-	antTransform->SetWorldPosition(end);
-	antTransform->SetWorldForward(glm::normalize(CE::To3D(towardsLocation)));
+	if (ant == nullptr)
+	{
+		LOG(LogGame, Error, "No ant component");
+		return;
+	}
+
+	const glm::vec2 worldStart = ant->mWorldPosition;
+	const glm::vec2 delta = CE::To2D(
+		CE::Math::RotateVector(CE::To3D(towardsLocation), ant->mWorldOrientation));
+	const glm::vec2 newPosition = worldStart + delta;
+
+	const glm::vec3 newForward = CE::To3D(glm::normalize(delta));
+	const glm::quat newOrientation = CE::Math::CalculateRotationBetweenOrientations(CE::sForward, newForward);
+
+	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
+
+	if (antSystem == nullptr)
+	{
+		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
+		return;
+	}
+
+	antSystem->mMoveCommandBuffer.AddCommand(MoveCommand{ CommandBase{ owner }, newPosition, newOrientation });
 }
 
 Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
 {
 	SenseResult senseResult{};
 
-	const CE::Registry& reg = world.GetRegistry();
-	const CE::TransformComponent* antTransform = reg.TryGet<CE::TransformComponent>(owner);
-
-	if (antTransform == nullptr)
+	if (senseLocation == glm::vec2{})
 	{
-		LOG(LogGame, Error, "Ant did not have transform");
 		return senseResult;
 	}
 
-	const glm::vec2 startWorld = antTransform->GetWorldPosition();
+	const CE::Registry& reg = world.GetRegistry();
+	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
+
+	if (ant == nullptr)
+	{
+		LOG(LogGame, Error, "No ant component");
+		return senseResult;
+	}
+
+	const glm::vec2 startWorld = ant->mWorldPosition;
 
 	const float dirLength = glm::length(senseLocation);
 
-	if (dirLength == 0.0f)
-	{
-		return senseResult;
-	}
+	const glm::vec2 normalisedDirLocal = senseLocation / dirLength;
 
-	const glm::vec2 normalisedDir = senseLocation / dirLength;
-
-	const glm::vec2 endWorld = startWorld + CE::To2D(CE::Math::RotateVector(CE::To3D(normalisedDir),
-		antTransform->GetWorldOrientation())) * dirLength;
+	const glm::vec2 endWorld = startWorld + CE::To2D(CE::Math::RotateVector(CE::To3D(normalisedDirLocal),
+		ant->mWorldOrientation)) * dirLength;
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
@@ -73,7 +103,7 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 		CE::AddDebugLine(const_cast<CE::RenderCommandQueue&>(world.GetRenderCommandQueue()),
 			CE::DebugDraw::Gameplay,
 			CE::To3D(startWorld),
-			CE::To3D(startWorld + normalisedDir * senseResult.mDist),
+			CE::To3D(startWorld + glm::normalize(endWorld - startWorld) * senseResult.mDist),
 			glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 	}
 
@@ -119,6 +149,8 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 	metaType.AddFunc(&AntBaseComponent::Move, "Move").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
+
+	CE::BindEvent(metaType, CE::sOnBeginPlay, &AntBaseComponent::OnBeginPlay);
 
 	CE::ReflectComponentType<AntBaseComponent>(metaType);
 

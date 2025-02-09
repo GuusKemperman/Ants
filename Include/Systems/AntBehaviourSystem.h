@@ -1,6 +1,11 @@
 #pragma once
+#include <future>
+
+#include "Commands/CommandBuffer.h"
+#include "Commands/MoveCommand.h"
 #include "Systems/System.h"
 #include "Utilities/Events.h"
+#include "Utilities/Time.h"
 
 namespace Ant
 {
@@ -20,6 +25,8 @@ namespace Ant
 		public CE::System
 	{
 	public:
+		~AntBehaviourSystem();
+
 		CE::SystemStaticTraits GetStaticTraits() const override
 		{
 			CE::SystemStaticTraits traits{};
@@ -29,7 +36,11 @@ namespace Ant
 
 		void Update(CE::World& world, float dt) override;
 
+		CommandBuffer<MoveCommand> mMoveCommandBuffer{};
+
 	private:
+		std::future<void> mCollectCommandsFuture{};
+
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(AntBehaviourSystem);

@@ -26,6 +26,8 @@ namespace Ant
 	class AntBaseComponent
 	{
 	public:
+		void OnBeginPlay(CE::World& world, entt::entity owner);
+
 		// static float GetCurrentEnergy(const CE::World& world, entt::entity owner);
 
 		// static bool IsCarryingFood(const CE::World& world, entt::entity owner);
@@ -40,10 +42,14 @@ namespace Ant
 
 		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
 
+		glm::vec2 mPreviousWorldPosition{};
+		glm::quat mPreviousWorldOrientation{};
+
+		glm::vec2 mWorldPosition{};
+		glm::quat mWorldOrientation{};
+
 	private:
 		float mEnergy = 100.0f;
-
-
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

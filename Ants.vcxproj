@@ -222,6 +222,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Commands\MoveCommand.cpp" />
     <ClCompile Include="Source\Systems\AntBehaviourSystem.cpp" />
     <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
     <ClCompile Include="Source\Components\AntBaseComponent.cpp" />
@@ -232,12 +233,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Source\Systems\RenderingInterpolationSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
+    <ClInclude Include="Include\Commands\CommandBase.h" />
+    <ClInclude Include="Include\Commands\CommandBuffer.h" />
+    <ClInclude Include="Include\Commands\MoveCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />
     <ClInclude Include="Include\Systems\AntBehaviourSystem.h" />
+    <ClInclude Include="Include\Systems\RenderingInterpolationSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
