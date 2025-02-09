@@ -222,6 +222,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Systems\AntBehaviourSystem.cpp" />
     <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
     <ClCompile Include="Source\Components\AntBaseComponent.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
@@ -236,6 +237,7 @@
     <ClInclude Include="Include\Ants\Precomp.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />
+    <ClInclude Include="Include\Systems\AntBehaviourSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

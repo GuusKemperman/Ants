@@ -12,14 +12,8 @@ namespace Ant
 	{
 		bool HitFood(const CE::World& world) const;
 
-		glm::vec2 GetSenseDirection() const;
-
-		glm::vec2 GetHitPosition() const;
-
 		float GetDistance() const;
 
-		glm::vec2 mSenseStart{};
-		glm::vec2 mSenseEnd{};
 		entt::entity mHitEntity{};
 		float mDist{};
 
@@ -42,7 +36,7 @@ namespace Ant
 
 		// static void Rest(const CE::World& world, entt::entity owner);
 
-		static void Move(CE::World& world, entt::entity owner, glm::vec2 direction);
+		static void Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation);
 
 		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
 
