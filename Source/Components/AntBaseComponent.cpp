@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/AntBaseComponent.h"
 
+#include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "World/World.h"
 #include "World/Physics.h"
@@ -27,6 +28,20 @@ void Ant::AntBaseComponent::OnBeginPlay(CE::World& world, entt::entity owner)
 
 	mPreviousWorldOrientation = antTransform->GetWorldOrientation();
 	mWorldOrientation = mPreviousWorldOrientation;
+}
+
+bool Ant::AntBaseComponent::IsCarryingFood(const CE::World& world, entt::entity owner)
+{
+	const CE::Registry& reg = world.GetRegistry();
+	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
+
+	if (ant == nullptr)
+	{
+		LOG(LogGame, Error, "No ant component");
+		return false;
+	}
+
+	return ant->mHoldingFoodPellet != entt::null;
 }
 
 void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
@@ -144,6 +159,11 @@ bool Ant::SenseResult::SensedFood(const CE::World& world) const
 	return SensedComponent(world, CE::MakeTypeId<FoodPelletTag>());
 }
 
+bool Ant::SenseResult::SensedNest(const CE::World& world) const
+{
+	return SensedComponent(world, CE::MakeTypeId<AntNestComponent>());
+}
+
 float Ant::SenseResult::GetDistance() const
 {
 	return mDist;
@@ -158,6 +178,7 @@ CE::MetaType Ant::SenseResult::Reflect()
 		.Add(CE::Props::sIsScriptableTag);
 
 	metaType.AddFunc(&SenseResult::SensedFood, "SensedFood").GetProperties().Add(CE::Props::sIsScriptableTag);
+	metaType.AddFunc(&SenseResult::SensedNest, "SensedNest").GetProperties().Add(CE::Props::sIsScriptableTag);
 	metaType.AddFunc(&SenseResult::GetDistance, "GetDistance").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	return metaType;
@@ -183,6 +204,10 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Set(CE::Props::sIsScriptPure, false);
 
 	metaType.AddFunc([] { return sInteractRange;  }, "GetInteractRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
+
+	metaType.AddFunc(&AntBaseComponent::IsCarryingFood, "IsCarryingFood").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, true);
 

@@ -14,6 +14,8 @@ namespace Ant
 
 		bool SensedFood(const CE::World& world) const;
 
+		bool SensedNest(const CE::World& world) const;
+
 		float GetDistance() const;
 
 		entt::entity mHitEntity{};
@@ -32,7 +34,7 @@ namespace Ant
 
 		// static float GetCurrentEnergy(const CE::World& world, entt::entity owner);
 
-		// static bool IsCarryingFood(const CE::World& world, entt::entity owner);
+		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
 		static constexpr float sInteractRange = 2.0f;
 
@@ -52,7 +54,7 @@ namespace Ant
 		glm::vec2 mWorldPosition{};
 		glm::quat mWorldOrientation{};
 
-		bool mIsHoldingFood{};
+		entt::entity mHoldingFoodPellet = entt::null;
 
 	private:
 		friend CE::ReflectAccess;

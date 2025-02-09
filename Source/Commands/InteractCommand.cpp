@@ -2,6 +2,7 @@
 #include "Commands/InteractCommand.h"
 
 #include "Components/AntBaseComponent.h"
+#include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -14,14 +15,21 @@ void Ant::InteractCommand::Execute(CE::World& world, std::span<const InteractCom
 	CE::Registry& reg = world.GetRegistry();
 	auto antView = reg.View<AntBaseComponent>();
 	auto foodView = reg.View<FoodPelletTag>();
+	auto nestView = reg.View<AntNestComponent>();
 	auto transformView = reg.View<CE::TransformComponent>();
 
 	for (const InteractCommand& command : commands)
 	{
 		AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
 
-		if (ant.mIsHoldingFood)
+		if (ant.mHoldingFoodPellet != entt::null)
 		{
+			if (nestView.contains(command.mInteractedWith))
+			{
+				reg.Destroy(ant.mHoldingFoodPellet, true);
+				ant.mHoldingFoodPellet = entt::null;
+				nestView.get<AntNestComponent>(command.mInteractedWith).DepositFood(1.0f);
+			}
 			continue;
 		}
 
@@ -30,7 +38,7 @@ void Ant::InteractCommand::Execute(CE::World& world, std::span<const InteractCom
 			continue;
 		}
 
-		ant.mIsHoldingFood = true;
+		ant.mHoldingFoodPellet = command.mInteractedWith;
 		reg.RemoveComponent<FoodPelletTag>(command.mInteractedWith);
 		reg.RemoveComponent<CE::PhysicsBody2DComponent>(command.mInteractedWith);
 		reg.RemoveComponent<CE::DiskColliderComponent>(command.mInteractedWith);

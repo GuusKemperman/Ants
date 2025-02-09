@@ -2,6 +2,7 @@
 #include "Systems/AntBehaviourSystem.h"
 
 #include "Components/AntBaseComponent.h"
+#include "Components/AntNestComponent.h"
 #include "Core/ThreadPool.h"
 #include "World/EventManager.h"
 #include "World/Registry.h"
@@ -34,6 +35,11 @@ void Ant::AntBehaviourSystem::Update(CE::World& world, float)
 	if (mCollectCommandsFuture.valid())
 	{
 		mCollectCommandsFuture.get();
+	}
+
+	for (auto [entity, nest] : world.GetRegistry().View<AntNestComponent>().each())
+	{
+		nest.SpendFoodOnSpawning(world, entity);
 	}
 
 	Internal::ProcessCommands(world, mMoveCommandBuffer);
