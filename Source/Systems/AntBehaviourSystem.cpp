@@ -5,6 +5,7 @@
 #include "Components/AntNestComponent.h"
 #include "Core/ThreadPool.h"
 #include "World/EventManager.h"
+#include "World/Physics.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -42,14 +43,16 @@ void Ant::AntBehaviourSystem::Update(CE::World& world, float)
 		nest.SpendFoodOnSpawning(world, entity);
 	}
 
+	world.GetPhysics().RebuildBVHs();
+
 	Internal::ProcessCommands(world, mMoveCommandBuffer);
 	Internal::ProcessCommands(world, mInteractCommandBuffer);
 
-	//mCollectCommandsFuture = CE::ThreadPool::Get().Enqueue([&world]()
+	mCollectCommandsFuture = CE::ThreadPool::Get().Enqueue([&world]()
 		{
 			world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
 		}
-	//);
+	);
 }
 
 CE::MetaType Ant::AntBehaviourSystem::Reflect()
