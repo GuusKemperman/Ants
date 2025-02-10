@@ -1,5 +1,4 @@
 #pragma once
-#include "CommandBase.h"
 
 namespace CE
 {
@@ -8,10 +7,11 @@ namespace CE
 
 namespace Ant
 {
-	struct InteractCommand : CommandBase
+	struct InteractCommand
 	{
 		static void Execute(CE::World& world, std::span<const InteractCommand> commands);
 
-		entt::entity mInteractedWith{};
+		entt::entity mAnt = entt::null;
+		entt::entity mInteractedWith = entt::null;
 	};
 }

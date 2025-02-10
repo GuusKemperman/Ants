@@ -38,15 +38,29 @@ void Ant::AntBehaviourSystem::Update(CE::World& world, float)
 		mCollectCommandsFuture.get();
 	}
 
-	for (auto [entity, nest] : world.GetRegistry().View<AntNestComponent>().each())
+	CE::Registry& reg = world.GetRegistry();
+
+	for (auto [entity, nest] : reg.View<AntNestComponent>().each())
 	{
 		nest.SpendFoodOnSpawning(world, entity);
 	}
 
-	world.GetPhysics().RebuildBVHs();
-
 	Internal::ProcessCommands(world, mMoveCommandBuffer);
 	Internal::ProcessCommands(world, mInteractCommandBuffer);
+	Internal::ProcessCommands(world, mEmitPheromoneCommandBuffer);
+
+	for (auto [entity, pheromoneComponent] : reg.View<PheromoneComponent>().each())
+	{
+		pheromoneComponent.mAmount -= PheromoneComponent::sEvaporationPerSecond * sAntTickInterval;
+
+		if (pheromoneComponent.mAmount <= 0.0f)
+		{
+			reg.Destroy(entity, true);
+		}
+	}
+
+	reg.RemovedDestroyed();
+	world.GetPhysics().RebuildBVHs();
 
 	mCollectCommandsFuture = CE::ThreadPool::Get().Enqueue([&world]()
 		{
