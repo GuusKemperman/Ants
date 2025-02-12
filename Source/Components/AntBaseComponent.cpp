@@ -211,8 +211,7 @@ float Ant::AntBaseComponent::DetectPheromones(const CE::World& world,
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
-	// Should be CollisionLayer trigger, but we'll be switching to a different approach soon anyways.
-	rules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
+	rules.SetResponse(CE::CollisionLayer::Trigger, CE::CollisionResponse::Overlap);
 
 	float totalSmelled = 0.0f;
 
