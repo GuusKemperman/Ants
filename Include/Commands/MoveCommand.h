@@ -1,5 +1,4 @@
 #pragma once
-#include "CommandBase.h"
 
 namespace CE
 {
@@ -8,9 +7,11 @@ namespace CE
 
 namespace Ant
 {
-	struct MoveCommand : CommandBase
+	struct MoveCommand
 	{
 		static void Execute(CE::World& world, std::span<const MoveCommand> commands);
+
+		entt::entity mAnt = entt::null;
 
 		glm::vec2 mNewPosition{};
 		glm::quat mNewOrientation{};

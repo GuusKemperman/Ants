@@ -32,17 +32,11 @@ namespace Ant
 	public:
 		void OnBeginPlay(CE::World& world, entt::entity owner);
 
-		// static float GetCurrentEnergy(const CE::World& world, entt::entity owner);
-
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
 		static constexpr float sInteractRange = 2.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
-
-		// static void Drop(const CE::World& world, entt::entity owner);
-
-		// static void Rest(const CE::World& world, entt::entity owner);
 
 		static void Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation);
 
@@ -54,7 +48,7 @@ namespace Ant
 		glm::vec2 mWorldPosition{};
 		glm::quat mWorldOrientation{};
 
-		entt::entity mHoldingFoodPellet = entt::null;
+		bool mIsHoldingFood{};
 
 	private:
 		friend CE::ReflectAccess;

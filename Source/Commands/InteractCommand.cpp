@@ -22,12 +22,11 @@ void Ant::InteractCommand::Execute(CE::World& world, std::span<const InteractCom
 	{
 		AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
 
-		if (ant.mHoldingFoodPellet != entt::null)
+		if (ant.mIsHoldingFood)
 		{
 			if (nestView.contains(command.mInteractedWith))
 			{
-				reg.Destroy(ant.mHoldingFoodPellet, true);
-				ant.mHoldingFoodPellet = entt::null;
+				ant.mIsHoldingFood = false;
 				nestView.get<AntNestComponent>(command.mInteractedWith).DepositFood(1.0f);
 			}
 			continue;
@@ -38,15 +37,10 @@ void Ant::InteractCommand::Execute(CE::World& world, std::span<const InteractCom
 			continue;
 		}
 
-		ant.mHoldingFoodPellet = command.mInteractedWith;
+		ant.mIsHoldingFood = true;
+
+		// Prevents others from grabbing the same one in this turn
 		reg.RemoveComponent<FoodPelletTag>(command.mInteractedWith);
-		reg.RemoveComponent<CE::PhysicsBody2DComponent>(command.mInteractedWith);
-		reg.RemoveComponent<CE::DiskColliderComponent>(command.mInteractedWith);
-
-		CE::TransformComponent& antTransform = transformView.get<CE::TransformComponent>(command.mAnt);
-		CE::TransformComponent& foodTransform = transformView.get<CE::TransformComponent>(command.mInteractedWith);
-
-		foodTransform.SetLocalPosition(CE::sForward * 1.5f);
-		foodTransform.SetParent(&antTransform, false);
+		reg.Destroy(command.mInteractedWith, true);
 	}
 }

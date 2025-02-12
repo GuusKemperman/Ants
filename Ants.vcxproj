@@ -239,7 +239,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
-    <ClInclude Include="Include\Commands\CommandBase.h" />
     <ClInclude Include="Include\Commands\CommandBuffer.h" />
     <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />

@@ -8,25 +8,17 @@
 #include "Components/TransformComponent.h"
 #include "Systems/AntBehaviourSystem.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Ant::AntBaseComponent::OnBeginPlay(CE::World& world, entt::entity owner)
+void Ant::AntBaseComponent::OnBeginPlay(CE::World&, entt::entity)
 {
-	world.SetTimeScale(10.0f);
+	const float randomAngle = CE::Random::Range(0.0f, glm::two_pi<float>());
 
-	CE::Registry& reg = world.GetRegistry();
-	CE::TransformComponent* antTransform = reg.TryGet<CE::TransformComponent>(owner);
+	glm::vec3 orientationEuler{};
+	orientationEuler[CE::Axis::Up] = randomAngle;
 
-	if (antTransform == nullptr)
-	{
-		LOG(LogGame, Error, "Ant did not have transform");
-		return;
-	}
-
-	mPreviousWorldPosition = antTransform->GetWorldPosition();
-	mWorldPosition = mPreviousWorldPosition;
-
-	mPreviousWorldOrientation = antTransform->GetWorldOrientation();
+	mPreviousWorldOrientation = glm::quat{ orientationEuler };
 	mWorldOrientation = mPreviousWorldOrientation;
 }
 
@@ -41,7 +33,7 @@ bool Ant::AntBaseComponent::IsCarryingFood(const CE::World& world, entt::entity 
 		return false;
 	}
 
-	return ant->mHoldingFoodPellet != entt::null;
+	return ant->mIsHoldingFood;
 }
 
 void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
@@ -62,7 +54,7 @@ void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
 		return;
 	}
 
-	antSystem->mInteractCommandBuffer.AddCommand(CommandBase{ owner }, result.mHitEntity);
+	antSystem->mInteractCommandBuffer.AddCommand(owner, result.mHitEntity);
 }
 
 void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
@@ -97,7 +89,7 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 		return;
 	}
 
-	antSystem->mMoveCommandBuffer.AddCommand(CommandBase{ owner }, newPosition, newOrientation);
+	antSystem->mMoveCommandBuffer.AddCommand(owner, newPosition, newOrientation);
 }
 
 Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
