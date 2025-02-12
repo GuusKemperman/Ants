@@ -2,11 +2,11 @@
 #include "Components/AntBaseComponent.h"
 
 #include "Components/AntNestComponent.h"
+#include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
-#include "Systems/AntBehaviourSystem.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -46,15 +46,7 @@ void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
 		return;
 	}
 
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mInteractCommandBuffer.AddCommand(owner, result.mHitEntity);
+	AntSimulationComponent::RecordCommand<InteractCommand>(world, { owner, result.mHitEntity });
 }
 
 void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
@@ -81,15 +73,7 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	const glm::vec3 newForward = CE::To3D(glm::normalize(delta));
 	const glm::quat newOrientation = CE::Math::CalculateRotationBetweenOrientations(CE::sForward, newForward);
 
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mMoveCommandBuffer.AddCommand(owner, newPosition, newOrientation);
+	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
 
 Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)

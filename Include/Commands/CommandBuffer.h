@@ -6,6 +6,26 @@ namespace Ant
 	class CommandBuffer
 	{
 	public:
+		CommandBuffer() = default;
+
+		CommandBuffer(CommandBuffer&&) noexcept = default;
+
+		CommandBuffer(const CommandBuffer& other) :
+			mCommands(other.mCommands),
+			mCommandsInUse(other.mCommandsInUse.load())
+		{}
+
+		CommandBuffer& operator=(CommandBuffer&&) noexcept = default;
+
+		CommandBuffer& operator=(const CommandBuffer& other)
+		{
+			mCommands = other.mCommands;
+			mCommandsInUse = other.mCommandsInUse.load();
+			return *this;
+		}
+
+		~CommandBuffer() = default;
+
 		template<typename... Args>
 		void AddCommand(Args&&... args);
 

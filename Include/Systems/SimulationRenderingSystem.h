@@ -1,18 +1,33 @@
 #pragma once
+#include <queue>
+
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Core/AssetHandle.h"
-#include "Components/TransformComponent.h"
-#include "Core/AssetManager.h"
+#include "Commands/GameStep.h"
+#include "GameState/GameState.h"
 #include "Systems/System.h"
 
 namespace Ant
 {
-	class RenderingInterpolationSystem :
+	class SimulationRenderingSystem :
 		public CE::System
 	{
 	public:
-		RenderingInterpolationSystem();
+		SimulationRenderingSystem();
+
+		void RecordStep(const GameStep& step);
+
+		static constexpr float sRenderingTimeInterval = .05f;
+
+		CE::SystemStaticTraits GetStaticTraits() const override
+		{
+			CE::SystemStaticTraits traits{};
+			traits.mFixedTickInterval = sRenderingTimeInterval;
+			return traits;
+		}
+
+		void Update(CE::World& world, float dt) override;
 
 		void Render(const CE::World& world, CE::RenderCommandQueue& renderQueue) const override;
 
@@ -28,8 +43,8 @@ namespace Ant
 		static constexpr glm::vec3 sFoodPelletScale{ 0.2f };
 		static constexpr glm::vec3 sFoodPelletHoldOffset = { 1.5f, 0.0f, 0.0f };
 
-		friend CE::ReflectAccess;
-		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(RenderingInterpolationSystem);
+		std::mutex mRenderingQueueMutex{};
+		std::queue<GameStep> mRenderingQueue{};
+		GameState mRenderingState{};
 	};
 }

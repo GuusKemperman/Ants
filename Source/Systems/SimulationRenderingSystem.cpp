@@ -1,16 +1,16 @@
 #include "Precomp.h"
-#include "Systems/RenderingInterpolationSystem.h"
+#include "Systems/SimulationRenderingSystem.h"
 
 #include "Components/AntBaseComponent.h"
+#include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/TransformComponent.h"
+#include "Core/AssetManager.h"
 #include "Core/Renderer.h"
-#include "Meta/MetaType.h"
-#include "Systems/AntBehaviourSystem.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
-Ant::RenderingInterpolationSystem::RenderingInterpolationSystem()
+Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 {
 	CE::AssetManager& assetManager = CE::AssetManager::Get();
 
@@ -28,8 +28,28 @@ Ant::RenderingInterpolationSystem::RenderingInterpolationSystem()
 	}
 }
 
-void Ant::RenderingInterpolationSystem::Render(const CE::World& world, CE::RenderCommandQueue& renderQueue) const
+void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
 {
+	std::lock_guard guard{ mRenderingQueueMutex };
+	mRenderingQueue.push(step);
+}
+
+void Ant::SimulationRenderingSystem::Update(CE::World&, float)
+{
+	std::lock_guard guard{ mRenderingQueueMutex };
+	if (mRenderingQueue.empty())
+	{
+		LOG(LogGame, Warning, "Rendering has caught up to simulation end!");
+		return;
+	}
+	mRenderingState.Step(mRenderingQueue.front());
+	mRenderingQueue.pop();
+}
+
+void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
+{
+	const CE::World& world = mRenderingState.GetWorld();
+
 	if (mMat == nullptr)
 	{
 		return;
@@ -38,10 +58,10 @@ void Ant::RenderingInterpolationSystem::Render(const CE::World& world, CE::Rende
 	if (mAntMesh != nullptr
 		&& mFoodMesh != nullptr)
 	{
-		const float totalTimePassed = world.GetCurrentTimeScaled();
-		const float interpolationFactor = glm::clamp(fmodf(totalTimePassed, sAntTickInterval), 0.0f, 1.0f);
+		const float totalTimePassed = viewportWorld.GetCurrentTimeScaled();
+		const float interpolationFactor = glm::clamp(fmodf(totalTimePassed, sRenderingTimeInterval) * (1 / sRenderingTimeInterval), 0.0f, 1.0f);
 
-		const glm::mat4 foodOffsetMatrix = CE::TransformComponent::ToMatrix(sFoodPelletHoldOffset, sFoodPelletScale, {1.0f, 0.0f, 0.0f, 0.0f});
+		const glm::mat4 foodOffsetMatrix = CE::TransformComponent::ToMatrix(sFoodPelletHoldOffset, sFoodPelletScale, { 1.0f, 0.0f, 0.0f, 0.0f });
 
 		for (auto [entity, ant] : world.GetRegistry().View<AntBaseComponent>().each())
 		{
@@ -83,11 +103,4 @@ void Ant::RenderingInterpolationSystem::Render(const CE::World& world, CE::Rende
 				sFoodCol);
 		}
 	}
-
-
-}
-
-CE::MetaType Ant::RenderingInterpolationSystem::Reflect()
-{
-	return { CE::MetaType::T<RenderingInterpolationSystem>{}, "RenderingInterpolationSystem", CE::MetaType::Base<System>{} };
 }
