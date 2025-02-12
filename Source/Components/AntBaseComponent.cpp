@@ -3,7 +3,6 @@
 
 #include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
-#include "Components/PheromoneComponent.h"
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
@@ -141,113 +140,6 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 	return senseResult;
 }
 
-namespace
-{
-	struct PheromoneSmellingOnIntersect
-	{
-		static void Callback(const CE::TransformedDisk& shape,
-			entt::entity entity,
-			const entt::storage_for_t<Ant::PheromoneComponent>& storage,
-			const CE::TransformedDisk& queryShape,
-			float& totalSmelled,
-			Ant::PheromoneId pheromoneId)
-		{
-			if (!storage.contains(entity))
-			{
-				LOG(LogGame, Error, "Entity unexpectedly did not have pheromone component, while being in pheromone channel");
-				return;
-			}
-			const Ant::PheromoneComponent& pheromoneComponent = storage.get(entity);
-
-			if (pheromoneComponent.mPheromoneId != pheromoneId)
-			{
-				return;
-			}
-
-			const float distToPheromoneCentre = glm::distance(shape.mCentre, queryShape.mCentre) - queryShape.mRadius;
-			totalSmelled += pheromoneComponent.GetPheromoneAmountAtDist(distToPheromoneCentre);
-		}
-
-		template<typename... Args>
-		static void Callback(const CE::TransformedAABB&, Args&&...)
-		{
-			LOG(LogGame, Error, "Entity unexpectedly had a non-disk collider, while being in pheromone channel");
-		}
-
-		template<typename... Args>
-		static void Callback(const CE::TransformedPolygon&, Args&&...)
-		{
-			LOG(LogGame, Error, "Entity unexpectedly had a non-disk collider, while being in pheromone channel");
-		}
-	};
-}
-
-float Ant::AntBaseComponent::DetectPheromones(const CE::World& world, 
-	entt::entity owner, 
-	glm::vec2 senseLocation,
-	PheromoneId pheromoneId)
-{
-	const CE::Registry& reg = world.GetRegistry();
-	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
-
-	if (ant == nullptr)
-	{
-		LOG(LogGame, Error, "No ant component");
-		return 0.0f;
-	}
-
-	const entt::storage_for_t<PheromoneComponent>* pheromoneStorage = reg.Storage<PheromoneComponent>();
-
-	if (pheromoneStorage == nullptr)
-	{
-		LOG(LogGame, Warning, "Pheromone storage was nullptr, uninitialised storage could lead to threading issues");
-		return 0.0f;
-	}
-
-	const glm::vec2 senseLocationWorld = ant->mWorldPosition + CE::To2D(CE::Math::RotateVector(CE::To3D(senseLocation),
-		ant->mWorldOrientation));
-
-	CE::TransformedDisk queryShape{ senseLocationWorld, 1.0f };
-
-	CE::CollisionRules rules{};
-	rules.mLayer = CE::CollisionLayer::Query;
-	rules.SetResponse(CE::CollisionLayer::Trigger, CE::CollisionResponse::Overlap);
-
-	float totalSmelled = 0.0f;
-
-	world.GetPhysics().Query<PheromoneSmellingOnIntersect, CE::BVH::DefaultShouldCheckFunction<true>, CE::BVH::DefaultShouldReturnFunction<false>>(
-		queryShape, 
-		rules, 
-		*pheromoneStorage, 
-		queryShape,
-		totalSmelled,
-		pheromoneId);
-
-	return totalSmelled;
-}
-
-void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId)
-{
-	const CE::Registry& reg = world.GetRegistry();
-	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
-
-	if (ant == nullptr)
-	{
-		LOG(LogGame, Error, "No ant component");
-		return;
-	}
-
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mEmitPheromoneCommandBuffer.AddCommand(ant->mPreviousWorldPosition, pheromoneId);
-}
-
 bool Ant::SenseResult::SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const
 {
 	return mHitEntity != entt::null
@@ -295,19 +187,11 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
 
-	metaType.AddFunc(&AntBaseComponent::DetectPheromones, "DetectPheromones").GetProperties()
-		.Add(CE::Props::sIsScriptableTag)
-		.Set(CE::Props::sIsScriptPure, false);
-
 	metaType.AddFunc(&AntBaseComponent::Move, "Move").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
 
 	metaType.AddFunc(&AntBaseComponent::Interact, "Interact").GetProperties()
-		.Add(CE::Props::sIsScriptableTag)
-		.Set(CE::Props::sIsScriptPure, false);
-
-	metaType.AddFunc(&AntBaseComponent::EmitPheromones, "EmitPheromones").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
 

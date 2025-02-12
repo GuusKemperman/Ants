@@ -47,17 +47,6 @@ void Ant::AntBehaviourSystem::Update(CE::World& world, float)
 
 	Internal::ProcessCommands(world, mMoveCommandBuffer);
 	Internal::ProcessCommands(world, mInteractCommandBuffer);
-	Internal::ProcessCommands(world, mEmitPheromoneCommandBuffer);
-
-	for (auto [entity, pheromoneComponent] : reg.View<PheromoneComponent>().each())
-	{
-		pheromoneComponent.mAmount -= PheromoneComponent::sEvaporationPerSecond * sAntTickInterval;
-
-		if (pheromoneComponent.mAmount <= 0.0f)
-		{
-			reg.Destroy(entity, true);
-		}
-	}
 
 	reg.RemovedDestroyed();
 	world.GetPhysics().RebuildBVHs();

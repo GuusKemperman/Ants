@@ -35,28 +35,6 @@ void Ant::RenderingInterpolationSystem::Render(const CE::World& world, CE::Rende
 		return;
 	}
 
-	//if (mPheromoneMesh != nullptr)
-	//{
-	//	const glm::mat4 pheromoneMatrix = CE::TransformComponent::ToMatrix({}, 
-	//		glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
-	//		glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
-
-	//	for (auto [entity, transform, pheromone] : world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>().each())
-	//	{
-	//		glm::vec4 col{ 0.0f, 0.0f, 0.0f, 1.0f };
-	//		col[0] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 1));
-	//		col[1] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 2));
-	//		col[2] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 4));
-
-	//		CE::Renderer::Get().AddStaticMesh(renderQueue,
-	//			mPheromoneMesh,
-	//			mMat,
-	//			transform.GetWorldMatrix() * pheromoneMatrix,
-	//			glm::vec4{ 0.0f },
-	//			col);
-	//	}
-	//}
-
 	if (mAntMesh != nullptr
 		&& mFoodMesh != nullptr)
 	{

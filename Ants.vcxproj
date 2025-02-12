@@ -222,8 +222,6 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Commands\EmitPheromoneCommand.cpp" />
-    <ClCompile Include="Source\Components\PheromoneComponent.cpp" />
     <ClCompile Include="Source\Commands\InteractCommand.cpp" />
     <ClCompile Include="Source\Commands\MoveCommand.cpp" />
     <ClCompile Include="Source\Components\AntNestComponent.cpp" />
@@ -242,13 +240,11 @@
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
     <ClInclude Include="Include\Commands\CommandBuffer.h" />
-    <ClInclude Include="Include\Commands\EmitPheromoneCommand.h" />
     <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\AntNestComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />
-    <ClInclude Include="Include\Components\PheromoneComponent.h" />
     <ClInclude Include="Include\Systems\AntBehaviourSystem.h" />
     <ClInclude Include="Include\Systems\RenderingInterpolationSystem.h" />
   </ItemGroup>

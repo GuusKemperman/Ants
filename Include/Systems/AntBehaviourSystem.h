@@ -2,7 +2,6 @@
 #include <future>
 
 #include "Commands/CommandBuffer.h"
-#include "Commands/EmitPheromoneCommand.h"
 #include "Commands/InteractCommand.h"
 #include "Commands/MoveCommand.h"
 #include "Systems/System.h"
@@ -40,7 +39,6 @@ namespace Ant
 
 		CommandBuffer<MoveCommand> mMoveCommandBuffer{};
 		CommandBuffer<InteractCommand> mInteractCommandBuffer{};
-		CommandBuffer<EmitPheromoneCommand> mEmitPheromoneCommandBuffer{};
 
 	private:
 		std::future<void> mCollectCommandsFuture{};
