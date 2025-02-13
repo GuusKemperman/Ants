@@ -5,65 +5,65 @@
 
 namespace Ant
 {
-	// TODO don't hardcode the two command types
-	class GameStep
+	template<typename... T>
+	class GameStepBase;
+
+	template <>
+	class GameStepBase<>
 	{
 	public:
-		void AddCommand(MoveCommand&& command)
+		void AddCommand() = delete;
+		void ForEachCommandBuffer(const auto&) {};
+		void ForEachCommandBuffer(const auto&) const {};
+	};
+
+	template<typename T, typename... O>
+	class GameStepBase<T, O...> : public GameStepBase<O...>
+	{
+		using Base = GameStepBase<O...>;
+
+	public:
+		using Base::AddCommand;
+
+		void AddCommand(T&& command)
 		{
-			mMoveCommandBuffer.AddCommand(std::move(command));
-		}
-
-		void AddCommand(InteractCommand&& command)
-		{
-			mInteractCommandBuffer.AddCommand(std::move(command));
-		}
-
-		template<typename T>
-		auto& GetCommandBuffer() = delete;
-
-		template<typename T>
-		const auto& GetCommandBuffer() const = delete;
-
-		template<>
-		auto& GetCommandBuffer<MoveCommand>()
-		{
-			return mMoveCommandBuffer;
-		}
-
-		template<>
-		auto& GetCommandBuffer<InteractCommand>()
-		{
-			return mInteractCommandBuffer;
-		}
-
-		template<>
-		const auto& GetCommandBuffer<MoveCommand>() const
-		{
-			return mMoveCommandBuffer;
-		}
-
-		template<>
-		const auto& GetCommandBuffer<InteractCommand>() const
-		{
-			return mInteractCommandBuffer;
+			mBuffer.AddCommand(std::move(command));
 		}
 
 		void ForEachCommandBuffer(const auto& func)
 		{
-			func(mMoveCommandBuffer);
-			func(mInteractCommandBuffer);
+			func(mBuffer);
+			Base::ForEachCommandBuffer(func);
 		}
 
 		void ForEachCommandBuffer(const auto& func) const
 		{
-			func(mMoveCommandBuffer);
-			func(mInteractCommandBuffer);
+			func(mBuffer);
+			Base::ForEachCommandBuffer(func);
+		}
+
+		template<typename D>
+		auto& GetCommandBuffer() = delete;
+
+		template<typename D>
+		const auto& GetCommandBuffer() const = delete;
+
+		template<>
+		auto& GetCommandBuffer<T>()
+		{
+			return mBuffer;
+		}
+
+		template<>
+		const auto& GetCommandBuffer<T>() const
+		{
+			return mBuffer;
 		}
 
 	private:
-		CommandBuffer<MoveCommand> mMoveCommandBuffer{};
-		CommandBuffer<InteractCommand> mInteractCommandBuffer{};
+		CommandBuffer<T> mBuffer{};
 	};
 
+	// Could also be a "using GameStep = ...", but now we can forward declare GameStep
+	class GameStep final : public GameStepBase<MoveCommand, InteractCommand> {};
 }
