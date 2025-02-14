@@ -42,11 +42,11 @@ namespace Ant
 
 		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
 
-		glm::vec2 mPreviousWorldPosition{};
-		glm::quat mPreviousWorldOrientation{};
-
 		glm::vec2 mWorldPosition{};
+		glm::vec2 mPreviousWorldPosition{};
+
 		glm::quat mWorldOrientation{};
+		glm::quat mPreviousWorldOrientation{};
 
 		bool mIsHoldingFood{};
 

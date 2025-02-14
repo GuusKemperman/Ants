@@ -10,14 +10,16 @@ namespace CE
 
 namespace Ant
 {
+	class GameStep;
+
 	class AntNestComponent
 	{
 	public:
 		void DepositFood(float amount);
 
-		void SpendFoodOnSpawning(CE::World& world, entt::entity owner);
+		size_t GetMaxNumAntsToSpawnNextStep() const;
 
-		CE::AssetHandle<CE::Prefab> mWorkerAnt{};
+		void SpendFoodOnSpawning(GameStep& gameStep);
 
 		float mFood{};
 

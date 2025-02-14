@@ -2,6 +2,7 @@
 #include "Commands/CommandBuffer.h"
 #include "Commands/InteractCommand.h"
 #include "Commands/MoveCommand.h"
+#include "Commands/SpawnAntCommand.h"
 
 namespace Ant
 {
@@ -42,28 +43,10 @@ namespace Ant
 			Base::ForEachCommandBuffer(func);
 		}
 
-		template<typename D>
-		auto& GetCommandBuffer() = delete;
-
-		template<typename D>
-		const auto& GetCommandBuffer() const = delete;
-
-		template<>
-		auto& GetCommandBuffer<T>()
-		{
-			return mBuffer;
-		}
-
-		template<>
-		const auto& GetCommandBuffer<T>() const
-		{
-			return mBuffer;
-		}
-
 	private:
 		CommandBuffer<T> mBuffer{};
 	};
 
 	// Could also be a "using GameStep = ...", but now we can forward declare GameStep
-	class GameStep final : public GameStepBase<MoveCommand, InteractCommand> {};
+	class GameStep final : public GameStepBase<MoveCommand, InteractCommand, SpawnAntCommand> {};
 }

@@ -3,7 +3,6 @@
 
 #include "Assets/Level.h"
 #include "Commands/GameStep.h"
-#include "Components/AntNestComponent.h"
 #include "Core/AssetManager.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -38,18 +37,11 @@ void Ant::GameState::Step(const GameStep& step)
 		mWorld.BeginPlay();
 	}
 
-	CE::Registry& reg = mWorld.GetRegistry();
-
-	for (auto [entity, nest] : reg.View<AntNestComponent>().each())
-	{
-		nest.SpendFoodOnSpawning(mWorld, entity);
-	}
-
 	step.ForEachCommandBuffer(
 		[&](const auto& commandBuffer)
 		{
 			Internal::ProcessCommands(mWorld, commandBuffer);
 		});
 
-	reg.RemovedDestroyed();
+	mWorld.GetRegistry().RemovedDestroyed();
 }

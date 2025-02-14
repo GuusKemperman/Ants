@@ -1,8 +1,11 @@
 #include "Precomp.h"
 #include "Components/AntSimulationComponent.h"
 
+#include <numeric>
+
 #include "Commands/GameStep.h"
 #include "Components/AntBaseComponent.h"
+#include "Components/AntNestComponent.h"
 #include "Systems/SimulationRenderingSystem.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/EventManager.h"
@@ -70,16 +73,35 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 					break;
 				}
 
-				size_t numOfAnts = world.GetRegistry().Storage<AntBaseComponent>().size();
+				CE::Registry& reg = world.GetRegistry();
+				size_t numOfAnts = reg.Storage<AntBaseComponent>().size();
 				nextStep->ForEachCommandBuffer(
-					[=](auto& commandBuffer)
+					[&]<typename T>(T& commandBuffer)
 					{
 						commandBuffer.Clear();
-						commandBuffer.mCommands.resize(numOfAnts);
+
+						if constexpr (std::is_same_v<T, CommandBuffer<SpawnAntCommand>>)
+						{
+							size_t total{};
+							for (auto [entity, nest] : reg.View<AntNestComponent>().each())
+							{
+								total += nest.GetMaxNumAntsToSpawnNextStep();
+							}
+							commandBuffer.mCommands.resize(total);
+						}
+						else
+						{
+							commandBuffer.mCommands.resize(numOfAnts);
+						}
 					});
 
 				world.GetPhysics().RebuildBVHs();
 				world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
+
+				for (auto [entity, nest] : reg.View<AntNestComponent>().each())
+				{
+					nest.SpendFoodOnSpawning(*nextStep);
+				}
 
 				mCurrentState.Step(*nextStep);
 				mStepsSimulated++;
