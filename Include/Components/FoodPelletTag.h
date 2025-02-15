@@ -1,6 +1,11 @@
 #pragma once
 #include "Meta/Fwd/MetaReflectFwd.h"
 
+namespace CE
+{
+	class World;
+}
+
 namespace Ant
 {
 	class FoodPelletTag

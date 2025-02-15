@@ -225,6 +225,7 @@
     <ClCompile Include="Source\Commands\InteractCommand.cpp" />
     <ClCompile Include="Source\Commands\MoveCommand.cpp" />
     <ClCompile Include="Source\Commands\SpawnAntCommand.cpp" />
+    <ClCompile Include="Source\Commands\SpawnFoodCommand.cpp" />
     <ClCompile Include="Source\Components\AntNestComponent.cpp" />
     <ClCompile Include="Source\Components\AntSimulationComponent.cpp" />
     <ClCompile Include="Source\GameState\GameState.cpp" />
@@ -246,6 +247,7 @@
     <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />
     <ClInclude Include="Include\Commands\SpawnAntCommand.h" />
+    <ClInclude Include="Include\Commands\SpawnFoodCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\AntNestComponent.h" />
     <ClInclude Include="Include\Components\AntSimulationComponent.h" />

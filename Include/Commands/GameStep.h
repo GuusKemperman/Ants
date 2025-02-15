@@ -3,6 +3,7 @@
 #include "Commands/InteractCommand.h"
 #include "Commands/MoveCommand.h"
 #include "Commands/SpawnAntCommand.h"
+#include "Commands/SpawnFoodCommand.h"
 
 namespace Ant
 {
@@ -43,10 +44,33 @@ namespace Ant
 			Base::ForEachCommandBuffer(func);
 		}
 
+		template<typename C>
+		CommandBuffer<C>& GetBuffer()
+		{
+			if constexpr (std::is_same_v<C, T>)
+			{
+				return mBuffer;
+			}
+			else
+			{
+				return Base::template GetBuffer<C>();
+			}
+		}
+
+		template<typename C>
+		const CommandBuffer<C>& GetBuffer() const
+		{
+			if constexpr (std::is_same_v<C, T>)
+			{
+				return mBuffer;
+			}
+			return Base::template GetBuffer<C>();
+		}
+
 	private:
 		CommandBuffer<T> mBuffer{};
 	};
 
 	// Could also be a "using GameStep = ...", but now we can forward declare GameStep
-	class GameStep final : public GameStepBase<MoveCommand, InteractCommand, SpawnAntCommand> {};
+	class GameStep final : public GameStepBase<MoveCommand, InteractCommand, SpawnAntCommand, SpawnFoodCommand> {};
 }

@@ -31,11 +31,19 @@ namespace Ant
 
 		void StartSimulation(CE::World* viewportWorld);
 
+		uint32 mMinNumOfFoodInWorld = 100;
+		uint32 mNumOfFoodToSpawn = 200;
+		float mFoodSpawnDistanceIncrementFactor = 1.5f;
+		float mFoodSpawnDist = 1.0f;
+		float mFoodClusterRadiusPerPellet = .4f;
+
 		bool mShouldRecord = true;
 
 		uint32 mStepsSimulated = 0;
 
 	private:
+		void SpawnFood(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer);
+
 		GameState mCurrentState{};
 		std::function<void(const GameStep&)> mOnStepCompletedCallback{};
 

@@ -18,7 +18,7 @@ namespace Ant
 
 		void RecordStep(const GameStep& step);
 
-		static constexpr float sRenderingTimeInterval = .5f;
+		static constexpr float sRenderingTimeInterval = .01f;
 
 		CE::SystemStaticTraits GetStaticTraits() const override
 		{

@@ -4,9 +4,12 @@
 #include <numeric>
 
 #include "Commands/GameStep.h"
+#include "Commands/SpawnFoodCommand.h"
 #include "Components/AntBaseComponent.h"
 #include "Components/AntNestComponent.h"
+#include "Components/FoodPelletTag.h"
 #include "Systems/SimulationRenderingSystem.h"
+#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/EventManager.h"
 #include "World/Physics.h"
@@ -74,7 +77,9 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 				}
 
 				CE::Registry& reg = world.GetRegistry();
+
 				size_t numOfAnts = reg.Storage<AntBaseComponent>().size();
+
 				nextStep->ForEachCommandBuffer(
 					[&]<typename T>(T& commandBuffer)
 					{
@@ -87,14 +92,19 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 							{
 								total += nest.GetMaxNumAntsToSpawnNextStep();
 							}
-							commandBuffer.mCommands.resize(total);
+							commandBuffer.Reserve(total);
+						}
+						else if constexpr (std::is_same_v<T, CommandBuffer<SpawnFoodCommand>>)
+						{
+							// do nothing
 						}
 						else
 						{
-							commandBuffer.mCommands.resize(numOfAnts);
+							commandBuffer.Reserve(numOfAnts);
 						}
 					});
 
+				SpawnFood(world, nextStep->GetBuffer<SpawnFoodCommand>());
 				world.GetPhysics().RebuildBVHs();
 				world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
 
@@ -115,6 +125,34 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 	};
 }
 
+
+void Ant::AntSimulationComponent::SpawnFood(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer)
+{
+	size_t numOfFood = world.GetRegistry().Storage<FoodPelletTag>().size();
+	size_t numOfFoodToSpawn = numOfFood < mMinNumOfFoodInWorld ? mNumOfFoodToSpawn : 0;
+
+	if (numOfFoodToSpawn == 0)
+	{
+		return;
+	}
+
+	commandBuffer.Reserve(numOfFoodToSpawn);
+
+	float clusterAngle = CE::Random::Range(0.0f, glm::two_pi<float>());
+	const glm::vec2 clusterCentre = mFoodSpawnDist * CE::Math::AngleToVec2(clusterAngle);
+	mFoodSpawnDist *= mFoodSpawnDistanceIncrementFactor;
+
+	const float clusterRadius = mFoodClusterRadiusPerPellet * static_cast<float>(numOfFoodToSpawn);
+
+	for (size_t i = 0; i < numOfFoodToSpawn; i++)
+	{
+		const float dist = CE::Random::Range(0.0f, clusterRadius);
+		const float angle = CE::Random::Range(0.0f, glm::two_pi<float>());
+		const glm::vec2 pos = clusterCentre + dist * CE::Math::AngleToVec2(angle);
+		commandBuffer.AddCommand(pos);
+	}
+}
+
 CE::MetaType Ant::AntSimulationComponent::Reflect()
 {
 	CE::MetaType metaType{ CE::MetaType::T<AntSimulationComponent>{}, "AntSimulationComponent" };
@@ -122,6 +160,13 @@ CE::MetaType Ant::AntSimulationComponent::Reflect()
 	metaType.AddField(&AntSimulationComponent::mShouldRecord, "mShouldRecord");
 	metaType.AddField(&AntSimulationComponent::mStepsSimulated, "mStepsSimulated")
 		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+
+	metaType.AddField(&AntSimulationComponent::mMinNumOfFoodInWorld, "mMinNumOfFoodInWorld");
+	metaType.AddField(&AntSimulationComponent::mNumOfFoodToSpawn, "mNumOfFoodToSpawn");
+	metaType.AddField(&AntSimulationComponent::mFoodSpawnDistanceIncrementFactor, "mFoodSpawnDistanceIncrementFactor");
+	metaType.AddField(&AntSimulationComponent::mFoodSpawnDist, "mFoodSpawnDist");
+	metaType.AddField(&AntSimulationComponent::mFoodClusterRadiusPerPellet, "mFoodClusterRadiusPerPellet");
+
 
 	CE::BindEvent(metaType, CE::sOnBeginPlay, &AntSimulationComponent::OnBeginPlay);
 

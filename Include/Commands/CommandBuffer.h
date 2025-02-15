@@ -35,9 +35,15 @@ namespace Ant
 			mCommandsInUse = 0;
 		}
 
+		void Reserve(size_t num)
+		{
+			mCommands.resize(num);
+		}
+
 		std::span<T> GetSubmittedCommands() { return { mCommands.data(), mCommandsInUse }; }
 		std::span<const T> GetSubmittedCommands() const { return { mCommands.data(), mCommandsInUse }; }
 
+	private:
 		std::vector<T> mCommands{};
 		std::atomic<size_t> mCommandsInUse{};
 	};
