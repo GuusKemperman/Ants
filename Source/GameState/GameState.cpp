@@ -44,4 +44,6 @@ void Ant::GameState::Step(const GameStep& step)
 		});
 
 	mWorld.GetRegistry().RemovedDestroyed();
+
+	mNumStepsCompleted++;
 }

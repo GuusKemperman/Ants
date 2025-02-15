@@ -18,15 +18,6 @@ namespace Ant
 
 		void RecordStep(const GameStep& step);
 
-		static constexpr float sRenderingTimeInterval = .01f;
-
-		CE::SystemStaticTraits GetStaticTraits() const override
-		{
-			CE::SystemStaticTraits traits{};
-			traits.mFixedTickInterval = sRenderingTimeInterval;
-			return traits;
-		}
-
 		void Update(CE::World& world, float dt) override;
 
 		void Render(const CE::World& world, CE::RenderCommandQueue& renderQueue) const override;

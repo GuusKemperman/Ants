@@ -228,6 +228,7 @@
     <ClCompile Include="Source\Commands\SpawnFoodCommand.cpp" />
     <ClCompile Include="Source\Components\AntNestComponent.cpp" />
     <ClCompile Include="Source\Components\AntSimulationComponent.cpp" />
+    <ClCompile Include="Source\Components\SimulationRenderingComponent.cpp" />
     <ClCompile Include="Source\GameState\GameState.cpp" />
     <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
     <ClCompile Include="Source\Components\AntBaseComponent.cpp" />
@@ -252,6 +253,7 @@
     <ClInclude Include="Include\Components\AntNestComponent.h" />
     <ClInclude Include="Include\Components\AntSimulationComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />
+    <ClInclude Include="Include\Components\SimulationRenderingComponent.h" />
     <ClInclude Include="Include\GameState\GameState.h" />
     <ClInclude Include="Include\Systems\SimulationRenderingSystem.h" />
   </ItemGroup>

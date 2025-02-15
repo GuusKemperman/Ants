@@ -8,6 +8,7 @@
 #include "Components/AntBaseComponent.h"
 #include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
+#include "Components/SimulationRenderingComponent.h"
 #include "Systems/SimulationRenderingSystem.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -55,7 +56,7 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 	CE::World& world = mCurrentState.GetWorld();
 	world.AddSystem<InternalSimulationSystem>();
 
-	if (mShouldRecord)
+	if (!viewportWorld->GetRegistry().View<SimulationRenderingComponent>().empty())
 	{
 		SimulationRenderingSystem& rendering = viewportWorld->AddSystem<SimulationRenderingSystem>();
 		mOnStepCompletedCallback = [&](const GameStep& step) { rendering.RecordStep(step); };
@@ -125,7 +126,6 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 	};
 }
 
-
 void Ant::AntSimulationComponent::SpawnFood(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer)
 {
 	size_t numOfFood = world.GetRegistry().Storage<FoodPelletTag>().size();
@@ -157,7 +157,6 @@ CE::MetaType Ant::AntSimulationComponent::Reflect()
 {
 	CE::MetaType metaType{ CE::MetaType::T<AntSimulationComponent>{}, "AntSimulationComponent" };
 
-	metaType.AddField(&AntSimulationComponent::mShouldRecord, "mShouldRecord");
 	metaType.AddField(&AntSimulationComponent::mStepsSimulated, "mStepsSimulated")
 		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 

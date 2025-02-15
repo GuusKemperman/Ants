@@ -4,6 +4,7 @@
 #include "Components/AntBaseComponent.h"
 #include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
+#include "Components/SimulationRenderingComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/AssetManager.h"
 #include "Core/Renderer.h"
@@ -34,21 +35,55 @@ void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
 	mRenderingQueue.push(step);
 }
 
-void Ant::SimulationRenderingSystem::Update(CE::World&, float)
+void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 {
-	std::lock_guard guard{ mRenderingQueueMutex };
-	if (mRenderingQueue.empty())
+	auto renderingView = world.GetRegistry().View<SimulationRenderingComponent>();
+	entt::entity renderingEntity = renderingView.front();
+
+	if (renderingEntity == entt::null)
 	{
-		LOG(LogGame, Warning, "Rendering has caught up to simulation end!");
 		return;
 	}
-	mRenderingState.Step(mRenderingQueue.front());
-	mRenderingQueue.pop();
+
+	SimulationRenderingComponent& renderingComponent = renderingView.get<SimulationRenderingComponent>(renderingEntity);
+	renderingComponent.mTimeStamp += renderingComponent.mPlaySpeed * dt;
+
+	uint64 numOfStepsAtTimeStamp = static_cast<uint64>(renderingComponent.mTimeStamp);
+
+	if (numOfStepsAtTimeStamp > mRenderingState.GetNumOfStepsCompleted())
+	{
+		std::lock_guard guard{ mRenderingQueueMutex };
+
+		while (numOfStepsAtTimeStamp > mRenderingState.GetNumOfStepsCompleted())
+		{
+			if (mRenderingQueue.empty())
+			{
+				LOG(LogGame, Warning, "Rendering has caught up to simulation end!");
+				return;
+			}
+			mRenderingState.Step(mRenderingQueue.front());
+			mRenderingQueue.pop();
+		}
+	}
 }
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
 {
 	const CE::World& world = mRenderingState.GetWorld();
+
+	auto renderingView = viewportWorld.GetRegistry().View<SimulationRenderingComponent>();
+	entt::entity renderingEntity = renderingView.front();
+
+	if (renderingEntity == entt::null)
+	{
+		return;
+	}
+
+	const SimulationRenderingComponent& renderingComponent = renderingView.get<SimulationRenderingComponent>(renderingEntity);
+	const float totalTimePassed = renderingComponent.mTimeStamp;
+	const float interpolationFactor = glm::clamp(
+		fmodf(totalTimePassed, GameState::sStepDurationSeconds) * (1 / GameState::sStepDurationSeconds),
+		0.0f, 1.0f);
 
 	if (mMat == nullptr)
 	{
@@ -58,9 +93,6 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 	if (mAntMesh != nullptr
 		&& mFoodMesh != nullptr)
 	{
-		const float totalTimePassed = viewportWorld.GetCurrentTimeScaled();
-		const float interpolationFactor = glm::clamp(fmodf(totalTimePassed, sRenderingTimeInterval) * (1 / sRenderingTimeInterval), 0.0f, 1.0f);
-
 		const glm::mat4 foodOffsetMatrix = CE::TransformComponent::ToMatrix(sFoodPelletHoldOffset, sFoodPelletScale, { 1.0f, 0.0f, 0.0f, 0.0f });
 
 		for (auto [entity, ant] : world.GetRegistry().View<AntBaseComponent>().each())

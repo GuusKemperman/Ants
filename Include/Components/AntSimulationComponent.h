@@ -37,8 +37,6 @@ namespace Ant
 		float mFoodSpawnDist = 1.0f;
 		float mFoodClusterRadiusPerPellet = .4f;
 
-		bool mShouldRecord = true;
-
 		uint32 mStepsSimulated = 0;
 
 	private:
