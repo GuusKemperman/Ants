@@ -10,6 +10,7 @@ CE::MetaType Ant::SimulationRenderingComponent::Reflect()
 
 	metaType.AddField(&SimulationRenderingComponent::mTimeStamp, "mTimeStamp");
 	metaType.AddField(&SimulationRenderingComponent::mDesiredPlaySpeed, "mDesiredPlaySpeed");
+	metaType.AddField(&SimulationRenderingComponent::mAntAnimationSpeed, "mAntAnimationSpeed");
 
 	CE::ReflectComponentType<SimulationRenderingComponent>(metaType);
 	return metaType;

@@ -14,6 +14,6 @@ namespace Ant
 		entt::entity mAnt = entt::null;
 
 		glm::vec2 mNewPosition{};
-		glm::quat mNewOrientation{};
+		float mNewOrientation{};
 	};
 }

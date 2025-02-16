@@ -9,6 +9,8 @@ namespace Ant
 		float mTimeStamp{};
 		float mDesiredPlaySpeed = 1.0f;
 
+		float mAntAnimationSpeed = 5.0f;
+
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

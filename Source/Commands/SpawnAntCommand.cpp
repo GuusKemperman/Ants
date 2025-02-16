@@ -4,7 +4,6 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/AntBaseComponent.h"
-#include "Components/TransformComponent.h"
 
 void Ant::SpawnAntCommand::Execute(CE::World& world, std::span<const SpawnAntCommand> commands)
 {
@@ -24,17 +23,12 @@ void Ant::SpawnAntCommand::Execute(CE::World& world, std::span<const SpawnAntCom
 		entt::entity entity = reg.Create();
 		reg.AddComponent(*playerScript, entity);
 
-		glm::vec3 orientationEuler{};
-		orientationEuler[CE::Axis::Up] = command.mOrientation;
-
-		glm::quat orientation{ orientationEuler };
-
 		antStorage.emplace(entity,
 			AntBaseComponent{
 				.mWorldPosition = {},
 				.mPreviousWorldPosition = {},
-				.mWorldOrientation = orientation,
-				.mPreviousWorldOrientation = orientation,
+				.mWorldOrientation = command.mOrientation,
+				.mPreviousWorldOrientation = command.mOrientation,
 			});
 	}
 }

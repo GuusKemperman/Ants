@@ -30,8 +30,6 @@ namespace Ant
 	class AntBaseComponent
 	{
 	public:
-		void OnBeginPlay(CE::World& world, entt::entity owner);
-
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
 		static constexpr float sInteractRange = 2.0f;
@@ -45,8 +43,10 @@ namespace Ant
 		glm::vec2 mWorldPosition{};
 		glm::vec2 mPreviousWorldPosition{};
 
-		glm::quat mWorldOrientation{};
-		glm::quat mPreviousWorldOrientation{};
+		glm::quat GetWorldOrientationQuat() const;
+
+		float mWorldOrientation{};
+		float mPreviousWorldOrientation{};
 
 		bool mIsHoldingFood{};
 
