@@ -7,7 +7,8 @@ namespace Ant
 	struct SimulationRenderingComponent
 	{
 		float mTimeStamp{};
-		float mPlaySpeed = 1.0f;
+		float mDesiredPlaySpeed = 1.0f;
+		float mActualPlaySpeed = 1.0f;
 
 	private:
 		friend CE::ReflectAccess;

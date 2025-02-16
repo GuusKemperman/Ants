@@ -37,7 +37,7 @@ void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
 
 void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 {
-	auto renderingView = world.GetRegistry().View<SimulationRenderingComponent>();
+	auto renderingView = world.GetRegistry().View<AntSimulationComponent, SimulationRenderingComponent>();
 	entt::entity renderingEntity = renderingView.front();
 
 	if (renderingEntity == entt::null)
@@ -45,20 +45,28 @@ void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 		return;
 	}
 
-	SimulationRenderingComponent& renderingComponent = renderingView.get<SimulationRenderingComponent>(renderingEntity);
-	renderingComponent.mTimeStamp += renderingComponent.mPlaySpeed * dt;
+	auto [simulationComponent, renderingComponent] = renderingView.get(renderingEntity);
 
-	uint64 numOfStepsAtTimeStamp = static_cast<uint64>(renderingComponent.mTimeStamp);
+	renderingComponent.mActualPlaySpeed = renderingComponent.mDesiredPlaySpeed;
 
-	if (numOfStepsAtTimeStamp > mRenderingState.GetNumOfStepsCompleted())
+	float numOfSecondsBehindSimulation =
+		(static_cast<float>(simulationComponent.mStepsSimulated) -
+		renderingComponent.mTimeStamp) / renderingComponent.mDesiredPlaySpeed;
+
+	const float modifier = std::clamp(std::log10f(std::max(numOfSecondsBehindSimulation, 0.0f)), 0.0f, 1.0f);
+	renderingComponent.mActualPlaySpeed *= modifier;
+
+	renderingComponent.mTimeStamp += renderingComponent.mActualPlaySpeed * dt;
+	uint64 numOfStepsRendered = static_cast<uint64>(renderingComponent.mTimeStamp);
+
+	if (numOfStepsRendered > mRenderingState.GetNumOfStepsCompleted())
 	{
 		std::lock_guard guard{ mRenderingQueueMutex };
 
-		while (numOfStepsAtTimeStamp > mRenderingState.GetNumOfStepsCompleted())
+		while (numOfStepsRendered > mRenderingState.GetNumOfStepsCompleted())
 		{
 			if (mRenderingQueue.empty())
 			{
-				LOG(LogGame, Warning, "Rendering has caught up to simulation end!");
 				return;
 			}
 			mRenderingState.Step(mRenderingQueue.front());
