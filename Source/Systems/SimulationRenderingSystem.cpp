@@ -16,9 +16,9 @@ Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 	CE::AssetManager& assetManager = CE::AssetManager::Get();
 
 	mMat = assetManager.TryGetAsset<CE::Material>("MT_White");
-	mAntMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Suzanne");
+	mAntMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 	mPheromoneMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
-	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Icosphere");
+	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 
 	if (mMat == nullptr
 		|| mAntMesh == nullptr

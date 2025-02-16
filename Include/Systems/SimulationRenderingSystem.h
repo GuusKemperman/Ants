@@ -28,7 +28,7 @@ namespace Ant
 		CE::AssetHandle<CE::StaticMesh> mPheromoneMesh{};
 		CE::AssetHandle<CE::StaticMesh> mFoodMesh{};
 
-		static constexpr glm::vec4 sAntCol{ 1.0f, .9f, .9f, 1.0f };
+		static constexpr glm::vec4 sAntCol{ .1f, .01f, .01f, 1.0f };
 		static constexpr glm::vec4 sFoodCol{ 0.0f, 1.0f, 0.0f, 1.0f };
 
 		static constexpr glm::vec3 sFoodPelletScale{ 0.2f };
