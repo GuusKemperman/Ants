@@ -1,6 +1,4 @@
 #pragma once
-#include <queue>
-
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Core/AssetHandle.h"
@@ -35,7 +33,7 @@ namespace Ant
 		static constexpr glm::vec3 sFoodPelletHoldOffset = { 1.5f, 0.0f, 0.0f };
 
 		std::mutex mRenderingQueueMutex{};
-		std::queue<GameStep> mRenderingQueue{};
-		GameState mRenderingState{};
+		std::vector<GameStep> mRenderingQueue{};
+		std::unique_ptr<GameState> mRenderingState = std::make_unique<GameState>();
 	};
 }

@@ -10,8 +10,6 @@ CE::MetaType Ant::SimulationRenderingComponent::Reflect()
 
 	metaType.AddField(&SimulationRenderingComponent::mTimeStamp, "mTimeStamp");
 	metaType.AddField(&SimulationRenderingComponent::mDesiredPlaySpeed, "mDesiredPlaySpeed");
-	metaType.AddField(&SimulationRenderingComponent::mActualPlaySpeed, "mActualPlaySpeed")
-		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
 	CE::ReflectComponentType<SimulationRenderingComponent>(metaType);
 	return metaType;

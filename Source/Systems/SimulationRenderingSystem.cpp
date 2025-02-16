@@ -32,7 +32,7 @@ Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
 {
 	std::lock_guard guard{ mRenderingQueueMutex };
-	mRenderingQueue.push(step);
+	mRenderingQueue.emplace_back(step);
 }
 
 void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
@@ -47,37 +47,32 @@ void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 
 	auto [simulationComponent, renderingComponent] = renderingView.get(renderingEntity);
 
-	renderingComponent.mActualPlaySpeed = renderingComponent.mDesiredPlaySpeed;
+	renderingComponent.mTimeStamp = glm::max(0.0f, renderingComponent.mTimeStamp + renderingComponent.mDesiredPlaySpeed * dt);
+	uint64 requiredNumSteps = glm::clamp(static_cast<int64>(renderingComponent.mTimeStamp), 
+		0ll, 
+		static_cast<int64>(mRenderingQueue.size()));
+	uint64 currentNumSteps = mRenderingState->GetNumOfStepsCompleted();
 
-	float numOfSecondsBehindSimulation =
-		(static_cast<float>(simulationComponent.mStepsSimulated) -
-		renderingComponent.mTimeStamp) / renderingComponent.mDesiredPlaySpeed;
+	if (currentNumSteps > requiredNumSteps)
+	{
+		mRenderingState = std::make_unique<GameState>();
+		currentNumSteps = 0;
+	}
 
-	const float modifier = std::clamp(std::log10f(std::max(numOfSecondsBehindSimulation, 0.0f)), 0.0f, 1.0f);
-	renderingComponent.mActualPlaySpeed *= modifier;
-
-	renderingComponent.mTimeStamp += renderingComponent.mActualPlaySpeed * dt;
-	uint64 numOfStepsRendered = static_cast<uint64>(renderingComponent.mTimeStamp);
-
-	if (numOfStepsRendered > mRenderingState.GetNumOfStepsCompleted())
+	if (currentNumSteps != requiredNumSteps)
 	{
 		std::lock_guard guard{ mRenderingQueueMutex };
 
-		while (numOfStepsRendered > mRenderingState.GetNumOfStepsCompleted())
+		for (uint64 i = currentNumSteps; i < requiredNumSteps; i++)
 		{
-			if (mRenderingQueue.empty())
-			{
-				return;
-			}
-			mRenderingState.Step(mRenderingQueue.front());
-			mRenderingQueue.pop();
+			mRenderingState->Step(mRenderingQueue[i]);
 		}
 	}
 }
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
 {
-	const CE::World& world = mRenderingState.GetWorld();
+	const CE::World& world = mRenderingState->GetWorld();
 
 	auto renderingView = viewportWorld.GetRegistry().View<SimulationRenderingComponent>();
 	entt::entity renderingEntity = renderingView.front();
@@ -89,7 +84,9 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 
 	const SimulationRenderingComponent& renderingComponent = renderingView.get<SimulationRenderingComponent>(renderingEntity);
 	const float totalTimePassed = renderingComponent.mTimeStamp;
-	const float interpolationFactor = glm::clamp(
+	const bool isBehindSimulation = mRenderingState->GetNumOfStepsCompleted() < static_cast<uint64>(renderingComponent.mTimeStamp);
+	const float interpolationFactor = isBehindSimulation ? 1.0f
+		: glm::clamp(
 		fmodf(totalTimePassed, GameState::sStepDurationSeconds) * (1 / GameState::sStepDurationSeconds),
 		0.0f, 1.0f);
 

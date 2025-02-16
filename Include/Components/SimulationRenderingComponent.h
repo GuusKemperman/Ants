@@ -8,7 +8,6 @@ namespace Ant
 	{
 		float mTimeStamp{};
 		float mDesiredPlaySpeed = 1.0f;
-		float mActualPlaySpeed = 1.0f;
 
 	private:
 		friend CE::ReflectAccess;
