@@ -4,6 +4,7 @@
 #include "Commands/MoveCommand.h"
 #include "Commands/SpawnAntCommand.h"
 #include "Commands/SpawnFoodCommand.h"
+#include "Commands/EmitPheromoneCommand.h"
 
 namespace Ant
 {
@@ -72,5 +73,5 @@ namespace Ant
 	};
 
 	// Could also be a "using GameStep = ...", but now we can forward declare GameStep
-	class GameStep final : public GameStepBase<MoveCommand, InteractCommand, SpawnAntCommand, SpawnFoodCommand> {};
+	class GameStep final : public GameStepBase<MoveCommand, EmitPheromoneCommand, InteractCommand, SpawnAntCommand, SpawnFoodCommand> {};
 }
