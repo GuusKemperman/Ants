@@ -1,4 +1,5 @@
 #pragma once
+#include "PheromoneComponent.h"
 #include "Meta\Fwd\MetaReflectFwd.h"
 
 namespace CE
@@ -41,6 +42,10 @@ namespace Ant
 		static void Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation);
 
 		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
+
+		static float DetectPheromones(const CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
+
+		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId);
 
 		glm::vec2 mPreviousWorldPosition{};
 		glm::quat mPreviousWorldOrientation{};
