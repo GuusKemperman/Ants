@@ -31,8 +31,6 @@ namespace Ant
 	class AntBaseComponent
 	{
 	public:
-		void OnBeginPlay(CE::World& world, entt::entity owner);
-
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
 		static constexpr float sInteractRange = 2.0f;
@@ -47,11 +45,11 @@ namespace Ant
 
 		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId);
 
-		glm::vec2 mPreviousWorldPosition{};
-		glm::quat mPreviousWorldOrientation{};
-
 		glm::vec2 mWorldPosition{};
-		glm::quat mWorldOrientation{};
+		glm::vec2 mPreviousWorldPosition{};
+
+		float mWorldOrientation{};
+		float mPreviousWorldOrientation{};
 
 		bool mIsHoldingFood{};
 

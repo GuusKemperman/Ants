@@ -1,27 +1,17 @@
 #include "Precomp.h"
 #include "Components/AntBaseComponent.h"
 
+#include "Commands/EmitPheromoneCommand.h"
 #include "Components/AntNestComponent.h"
+#include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/PheromoneComponent.h"
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
-#include "Systems/AntBehaviourSystem.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-
-void Ant::AntBaseComponent::OnBeginPlay(CE::World&, entt::entity)
-{
-	const float randomAngle = CE::Random::Range(0.0f, glm::two_pi<float>());
-
-	glm::vec3 orientationEuler{};
-	orientationEuler[CE::Axis::Up] = randomAngle;
-
-	mPreviousWorldOrientation = glm::quat{ orientationEuler };
-	mWorldOrientation = mPreviousWorldOrientation;
-}
 
 bool Ant::AntBaseComponent::IsCarryingFood(const CE::World& world, entt::entity owner)
 {
@@ -47,15 +37,7 @@ void Ant::AntBaseComponent::Interact(CE::World& world, entt::entity owner)
 		return;
 	}
 
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mInteractCommandBuffer.AddCommand(owner, result.mHitEntity);
+	AntSimulationComponent::RecordCommand<InteractCommand>(world, { owner, result.mHitEntity });
 }
 
 void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation)
@@ -75,22 +57,12 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	}
 
 	const glm::vec2 worldStart = ant->mWorldPosition;
-	const glm::vec2 delta = CE::To2D(
-		CE::Math::RotateVector(CE::To3D(towardsLocation), ant->mWorldOrientation));
+	const glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
 	const glm::vec2 newPosition = worldStart + delta;
 
-	const glm::vec3 newForward = CE::To3D(glm::normalize(delta));
-	const glm::quat newOrientation = CE::Math::CalculateRotationBetweenOrientations(CE::sForward, newForward);
+	const float newOrientation = CE::Math::Vec2ToAngle(delta);
 
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mMoveCommandBuffer.AddCommand(owner, newPosition, newOrientation);
+	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
 
 Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
@@ -117,8 +89,8 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 
 	const glm::vec2 normalisedDirLocal = senseLocation / dirLength;
 
-	const glm::vec2 endWorld = startWorld + CE::To2D(CE::Math::RotateVector(CE::To3D(normalisedDirLocal),
-		ant->mWorldOrientation)) * dirLength;
+	const glm::vec2 endWorld = startWorld + 
+		CE::Math::RotateVec2ByAngleInRadians(normalisedDirLocal, ant->mWorldOrientation) * dirLength;
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
@@ -204,14 +176,14 @@ float Ant::AntBaseComponent::DetectPheromones(const CE::World& world,
 		return 0.0f;
 	}
 
-	const glm::vec2 senseLocationWorld = ant->mWorldPosition + CE::To2D(CE::Math::RotateVector(CE::To3D(senseLocation),
-		ant->mWorldOrientation));
+	const glm::vec2 senseLocationWorld = ant->mWorldPosition +
+		CE::Math::RotateVec2ByAngleInRadians(senseLocation, ant->mWorldOrientation);
 
 	CE::TransformedDisk queryShape{ senseLocationWorld, 1.0f };
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
-	rules.SetResponse(CE::CollisionLayer::Trigger, CE::CollisionResponse::Overlap);
+	rules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
 
 	float totalSmelled = 0.0f;
 
@@ -237,15 +209,7 @@ void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner,
 		return;
 	}
 
-	AntBehaviourSystem* antSystem = world.TryGetSystem<AntBehaviourSystem>();
-
-	if (antSystem == nullptr)
-	{
-		LOG(LogGame, Error, "AntBehaviourSystem does not exist");
-		return;
-	}
-
-	antSystem->mEmitPheromoneCommandBuffer.AddCommand(ant->mPreviousWorldPosition, pheromoneId);
+	AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId });
 }
 
 bool Ant::SenseResult::SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const
@@ -318,8 +282,6 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 	metaType.AddFunc(&AntBaseComponent::IsCarryingFood, "IsCarryingFood").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, true);
-
-	CE::BindEvent(metaType, CE::sOnBeginPlay, &AntBaseComponent::OnBeginPlay);
 
 	CE::ReflectComponentType<AntBaseComponent>(metaType);
 

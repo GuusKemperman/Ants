@@ -6,6 +6,26 @@ namespace Ant
 	class CommandBuffer
 	{
 	public:
+		CommandBuffer() = default;
+
+		CommandBuffer(CommandBuffer&&) noexcept = default;
+
+		CommandBuffer(const CommandBuffer& other) :
+			mCommands(other.mCommands),
+			mCommandsInUse(other.mCommandsInUse.load())
+		{}
+
+		CommandBuffer& operator=(CommandBuffer&&) noexcept = default;
+
+		CommandBuffer& operator=(const CommandBuffer& other)
+		{
+			mCommands = other.mCommands;
+			mCommandsInUse = other.mCommandsInUse.load();
+			return *this;
+		}
+
+		~CommandBuffer() = default;
+
 		template<typename... Args>
 		void AddCommand(Args&&... args);
 
@@ -15,9 +35,15 @@ namespace Ant
 			mCommandsInUse = 0;
 		}
 
+		void Reserve(size_t num)
+		{
+			mCommands.resize(num);
+		}
+
 		std::span<T> GetSubmittedCommands() { return { mCommands.data(), mCommandsInUse }; }
 		std::span<const T> GetSubmittedCommands() const { return { mCommands.data(), mCommandsInUse }; }
 
+	private:
 		std::vector<T> mCommands{};
 		std::atomic<size_t> mCommandsInUse{};
 	};

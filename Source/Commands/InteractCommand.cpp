@@ -4,9 +4,6 @@
 #include "Components/AntBaseComponent.h"
 #include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
-#include "Components/Physics2D/DiskColliderComponent.h"
-#include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/TransformComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -16,7 +13,6 @@ void Ant::InteractCommand::Execute(CE::World& world, std::span<const InteractCom
 	auto antView = reg.View<AntBaseComponent>();
 	auto foodView = reg.View<FoodPelletTag>();
 	auto nestView = reg.View<AntNestComponent>();
-	auto transformView = reg.View<CE::TransformComponent>();
 
 	for (const InteractCommand& command : commands)
 	{

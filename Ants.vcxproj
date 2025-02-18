@@ -226,8 +226,12 @@
     <ClCompile Include="Source\Components\PheromoneComponent.cpp" />
     <ClCompile Include="Source\Commands\InteractCommand.cpp" />
     <ClCompile Include="Source\Commands\MoveCommand.cpp" />
+    <ClCompile Include="Source\Commands\SpawnAntCommand.cpp" />
+    <ClCompile Include="Source\Commands\SpawnFoodCommand.cpp" />
     <ClCompile Include="Source\Components\AntNestComponent.cpp" />
-    <ClCompile Include="Source\Systems\AntBehaviourSystem.cpp" />
+    <ClCompile Include="Source\Components\AntSimulationComponent.cpp" />
+    <ClCompile Include="Source\Components\SimulationRenderingComponent.cpp" />
+    <ClCompile Include="Source\GameState\GameState.cpp" />
     <ClCompile Include="Source\Components\FoodPelletTag.cpp" />
     <ClCompile Include="Source\Components\AntBaseComponent.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
@@ -237,20 +241,26 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Source\Systems\RenderingInterpolationSystem.cpp" />
+    <ClCompile Include="Source\Systems\SimulationRenderingSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
     <ClInclude Include="Include\Commands\CommandBuffer.h" />
     <ClInclude Include="Include\Commands\EmitPheromoneCommand.h" />
+    <ClInclude Include="Include\Commands\GameStep.h" />
     <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />
+    <ClInclude Include="Include\Commands\SpawnAntCommand.h" />
+    <ClInclude Include="Include\Commands\SpawnFoodCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />
     <ClInclude Include="Include\Components\AntNestComponent.h" />
+    <ClInclude Include="Include\Components\AntSimulationComponent.h" />
     <ClInclude Include="Include\Components\FoodPelletTag.h" />
     <ClInclude Include="Include\Components\PheromoneComponent.h" />
-    <ClInclude Include="Include\Systems\AntBehaviourSystem.h" />
     <ClInclude Include="Include\Systems\RenderingInterpolationSystem.h" />
+    <ClInclude Include="Include\Components\SimulationRenderingComponent.h" />
+    <ClInclude Include="Include\GameState\GameState.h" />
+    <ClInclude Include="Include\Systems\SimulationRenderingSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
