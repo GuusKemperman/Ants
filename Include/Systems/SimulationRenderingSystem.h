@@ -35,7 +35,7 @@ namespace Ant
 		static constexpr glm::vec3 sFoodPelletHoldOffset = { 1.f, 0.0f, 0.0f };
 		static constexpr glm::vec3 sFoodPelletHoldRotation = { 0.0f, 0.0f, 0.0f };
 
-		std::mutex mRenderingQueueMutex{};
+		mutable std::mutex mRenderingQueueMutex{};
 		std::vector<GameStep> mRenderingQueue{};
 		std::unique_ptr<GameState> mRenderingState = std::make_unique<GameState>();
 	};

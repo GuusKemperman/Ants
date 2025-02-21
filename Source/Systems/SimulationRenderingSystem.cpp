@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/SimulationRenderingSystem.h"
 
+#include "Commands/SenseCommand.h"
 #include "Components/AntBaseComponent.h"
 #include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
@@ -8,6 +9,7 @@
 #include "Components/TransformComponent.h"
 #include "Core/AssetManager.h"
 #include "Core/Renderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -199,6 +201,53 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 				foodMatrix,
 				glm::vec4{ 0.0f },
 				sFoodCol);
+		}
+	}
+
+	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::AIDecision))
+	{
+		const GameStep mostRecentGameStep = [&]() -> GameStep
+			{
+				std::lock_guard l{ mRenderingQueueMutex }; 
+				uint64 numStepsCompleted = mRenderingState->GetNumOfStepsCompleted();
+
+				if (numStepsCompleted == 0
+					|| numStepsCompleted > mRenderingQueue.size())
+				{
+					return {};
+				}
+
+				return mRenderingQueue[numStepsCompleted - 1];
+			}();
+
+		const CommandBuffer<SenseCommand>& senseCommands = mostRecentGameStep.GetBuffer<SenseCommand>();
+
+		for (const SenseCommand& command : senseCommands.GetStoredCommands())
+		{
+			if (antView.contains(command.mAnt))
+			{
+				const AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
+				constexpr float lineHeight = 2.0f;
+				const glm::vec2 direction = glm::normalize(command.mSenseLocationWorld - ant.mPreviousWorldPosition);
+
+				const glm::vec2 nonHitLineStart = ant.mPreviousWorldPosition + direction * command.mDist;
+				const glm::vec2 nonHitLineEnd = command.mSenseLocationWorld;
+
+				const glm::vec2 hitLineStart = ant.mPreviousWorldPosition;
+				const glm::vec2 hitLineEnd = nonHitLineStart;
+
+				CE::AddDebugLine(renderQueue,
+					CE::DebugDraw::AIDecision,
+					CE::To3D(nonHitLineStart, lineHeight),
+					CE::To3D(nonHitLineEnd, lineHeight),
+					glm::vec4{ 1.0f, 1.0f, 1.0f, .2f });
+
+				CE::AddDebugLine(renderQueue,
+					CE::DebugDraw::AIDecision,
+					CE::To3D(hitLineStart, lineHeight),
+					CE::To3D(hitLineEnd, lineHeight),
+					glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+			}
 		}
 	}
 }

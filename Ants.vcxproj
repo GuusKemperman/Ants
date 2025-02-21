@@ -250,6 +250,7 @@
     <ClInclude Include="Include\Commands\GameStep.h" />
     <ClInclude Include="Include\Commands\InteractCommand.h" />
     <ClInclude Include="Include\Commands\MoveCommand.h" />
+    <ClInclude Include="Include\Commands\SenseCommand.h" />
     <ClInclude Include="Include\Commands\SpawnAntCommand.h" />
     <ClInclude Include="Include\Commands\SpawnFoodCommand.h" />
     <ClInclude Include="Include\Components\AntBaseComponent.h" />

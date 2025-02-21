@@ -65,7 +65,7 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
 
-Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
+Ant::SenseResult Ant::AntBaseComponent::Sense(CE::World& world, entt::entity owner, glm::vec2 senseLocation)
 {
 	SenseResult senseResult{};
 
@@ -85,12 +85,10 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 
 	const glm::vec2 startWorld = ant->mWorldPosition;
 
-	const float dirLength = glm::length(senseLocation);
-
-	const glm::vec2 normalisedDirLocal = senseLocation / dirLength;
+	senseLocation = CE::Math::ClampLength(senseLocation, 0.0f, sMaxSenseRange);
 
 	const glm::vec2 endWorld = startWorld + 
-		CE::Math::RotateVec2ByAngleInRadians(normalisedDirLocal, ant->mWorldOrientation) * dirLength;
+		CE::Math::RotateVec2ByAngleInRadians(senseLocation, ant->mWorldOrientation);
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
@@ -100,16 +98,7 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 
 	senseResult.mDist = physicsResult.mDist;
 	senseResult.mHitEntity = physicsResult.mHitEntity;
-
-	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::Gameplay))
-	{
-		CE::AddDebugLine(const_cast<CE::RenderCommandQueue&>(world.GetRenderCommandQueue()),
-			CE::DebugDraw::Gameplay,
-			CE::To3D(startWorld),
-			CE::To3D(startWorld + glm::normalize(endWorld - startWorld) * senseResult.mDist),
-			glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-	}
-
+	AntSimulationComponent::RecordCommand<SenseCommand>(world, { owner, endWorld, senseResult.mDist });
 	return senseResult;
 }
 
@@ -276,6 +265,10 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Set(CE::Props::sIsScriptPure, false);
 
 	metaType.AddFunc([] { return sInteractRange;  }, "GetInteractRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
+
+	metaType.AddFunc([] { return sMaxSenseRange;  }, "GetSenseRange").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, true);
 

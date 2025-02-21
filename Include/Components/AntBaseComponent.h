@@ -33,13 +33,14 @@ namespace Ant
 	public:
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
+		static constexpr float sMaxSenseRange = 5.0f;
 		static constexpr float sInteractRange = 2.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
 
 		static void Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation);
 
-		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
+		static SenseResult Sense(CE::World& world, entt::entity owner, glm::vec2 senseLocation);
 
 		static float DetectPheromones(const CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
 
