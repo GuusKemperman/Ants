@@ -77,39 +77,33 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 					break;
 				}
 
-				CE::Registry& reg = world.GetRegistry();
-
-				size_t numOfAnts = reg.Storage<AntBaseComponent>().size();
-
 				nextStep->ForEachCommandBuffer(
-					[&]<typename T>(T& commandBuffer)
+					[&]<typename T>(CommandBuffer<T>& commandBuffer)
 					{
+						size_t numStored = commandBuffer.GetStoredCommands().size();
+						size_t numSubmitted = commandBuffer.GetNumSubmittedCommands();
+
 						commandBuffer.Clear();
 
-						if constexpr (std::is_same_v<T, CommandBuffer<SpawnAntCommand>>)
+						size_t numReserved = numStored;
+
+						if (numStored == 0)
 						{
-							size_t total{};
-							for (auto [entity, nest] : reg.View<AntNestComponent>().each())
-							{
-								total += nest.GetMaxNumAntsToSpawnNextStep();
-							}
-							commandBuffer.Reserve(total);
+							numReserved = 1024;
 						}
-						else if constexpr (std::is_same_v<T, CommandBuffer<SpawnFoodCommand>>)
+						else if (numStored < numSubmitted * 2)
 						{
-							// do nothing
+							numReserved = numSubmitted * 2;
 						}
-						else
-						{
-							commandBuffer.Reserve(numOfAnts);
-						}
+
+						commandBuffer.Reserve(numReserved);
 					});
 
 				SpawnFood(world, nextStep->GetBuffer<SpawnFoodCommand>());
 				world.GetPhysics().RebuildBVHs();
 				world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
 
-				for (auto [entity, nest] : reg.View<AntNestComponent>().each())
+				for (auto [entity, nest] : world.GetRegistry().View<AntNestComponent>().each())
 				{
 					nest.SpendFoodOnSpawning(*nextStep);
 				}

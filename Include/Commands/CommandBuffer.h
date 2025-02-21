@@ -12,7 +12,11 @@ namespace Ant
 		CommandBuffer(CommandBuffer&&) noexcept = default;
 
 		CommandBuffer(const CommandBuffer& other) :
-			mCommands(other.mCommands),
+			mCommands([](const CommandBuffer& other) -> decltype(mCommands)
+				{
+					auto storedCommands = other.GetStoredCommands();
+					return { storedCommands.begin(), storedCommands.end() };
+				}(other)),
 			mCommandsInUse(other.mCommandsInUse.load())
 		{}
 
@@ -39,17 +43,20 @@ namespace Ant
 		void Reserve(size_t num)
 		{
 			mCommands.resize(num);
+			mCommands.resize(mCommands.capacity());
 		}
 
-		std::span<T> GetSubmittedCommands() 
+		size_t GetNumSubmittedCommands() const { return mCommandsInUse; }
+
+		std::span<T> GetStoredCommands() 
 		{ 
 			const CommandBuffer& self = *this;
-			std::span<const T> constSpan = self.GetSubmittedCommands();
+			std::span<const T> constSpan = self.GetStoredCommands();
 
 			return { const_cast<T*>(constSpan.data()), constSpan.size() };
 		}
 		
-		std::span<const T> GetSubmittedCommands() const 
+		std::span<const T> GetStoredCommands() const
 		{
 			if (mCommandsInUse > mCommands.size())
 			{

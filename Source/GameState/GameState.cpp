@@ -12,7 +12,7 @@ namespace Internal
 	template<typename T>
 	static void ProcessCommands(CE::World& world, const Ant::CommandBuffer<T>& commandBuffer)
 	{
-		T::Execute(world, commandBuffer.GetSubmittedCommands());
+		T::Execute(world, commandBuffer.GetStoredCommands());
 	}
 }
 
