@@ -1,4 +1,5 @@
 #pragma once
+#include "Meta/MetaTypeId.h"
 
 namespace Ant
 {
@@ -40,8 +41,28 @@ namespace Ant
 			mCommands.resize(num);
 		}
 
-		std::span<T> GetSubmittedCommands() { return { mCommands.data(), mCommandsInUse }; }
-		std::span<const T> GetSubmittedCommands() const { return { mCommands.data(), mCommandsInUse }; }
+		std::span<T> GetSubmittedCommands() 
+		{ 
+			const CommandBuffer& self = *this;
+			std::span<const T> constSpan = self.GetSubmittedCommands();
+
+			return { const_cast<T*>(constSpan.data()), constSpan.size() };
+		}
+		
+		std::span<const T> GetSubmittedCommands() const 
+		{
+			if (mCommandsInUse > mCommands.size())
+			{
+				LOG(LogGame,
+					Warning,
+					"{} commands of type {} could not be submitted due to the buffer being full",
+					mCommandsInUse - mCommands.size(),
+					CE::MakeTypeName<T>());
+				return { mCommands.data(), mCommands.size() };
+			}
+
+			return { mCommands.data(), mCommandsInUse }; 
+		}
 
 	private:
 		std::vector<T> mCommands{};
@@ -52,6 +73,13 @@ namespace Ant
 	template<typename ...Args>
 	void CommandBuffer<T>::AddCommand(Args&& ...args)
 	{
-		mCommands[mCommandsInUse++] = T{ std::forward<Args>(args)... };
+		size_t index = mCommandsInUse++;
+
+		if (index >= mCommands.size())
+		{
+			return;
+		}
+
+		mCommands[index] = T{ std::forward<Args>(args)... };
 	}
 }
