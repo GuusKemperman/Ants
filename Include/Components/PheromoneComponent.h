@@ -11,10 +11,10 @@ namespace Ant
 		float GetPheromoneAmountAtDist(float distToCentre) const;
 
 		static constexpr float sInitialAmount = 1.0f;
-		static constexpr float sEvaporationPerSecond = 0.01f;
+		static constexpr float sPheromoneDuration = 60.0f;
+		static constexpr float sEvaporationPerSecond = sInitialAmount / sPheromoneDuration;
 
-		// TODO: Requires updating disk collider component as well
-		static constexpr float sRadius = 5.0f;
+		static constexpr float sRadius = 1.0f;
 
 		PheromoneId mPheromoneId{};
 

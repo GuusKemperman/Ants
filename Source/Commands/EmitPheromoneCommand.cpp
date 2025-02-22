@@ -6,6 +6,7 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Core/AssetManager.h"
+#include "GameState/GameState.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -32,4 +33,9 @@ void Ant::EmitPheromoneCommand::Execute(CE::World& world, std::span<const EmitPh
 		body.mRules.mLayer = CE::CollisionLayer::Query;
 		body.mRules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
 	}
+}
+
+bool Ant::EmitPheromoneCommand::CanSpawnPheromoneNextTick(const GameState& state)
+{
+	return !(state.GetNumOfStepsCompleted() % sPheromoneSpawnInterval);
 }

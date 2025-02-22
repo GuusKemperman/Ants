@@ -24,6 +24,11 @@ namespace Ant
 
 		void OnBeginPlay(CE::World& world, entt::entity owner);
 
+		const GameState& GetGameState() const { return mCurrentState; }
+
+		static const AntSimulationComponent* TryGetOwningSimulationComponent(const CE::World& world);
+		static const GameState* TryGetGameState(const CE::World& world);
+
 		static GameStep* TryGetNextGameStep(CE::World& world);
 
 		template<typename T>
@@ -40,7 +45,9 @@ namespace Ant
 		uint32 mStepsSimulated = 0;
 
 	private:
-		void SpawnFood(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer);
+		void CollectSpawnFoodCommands(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer);
+		static void CollectSpawnAntsCommands(CE::World& world, GameStep& nextStep);
+		static void EvaporatePheromones(CE::World& world);
 
 		GameState mCurrentState{};
 		std::function<void(const GameStep&)> mOnStepCompletedCallback{};

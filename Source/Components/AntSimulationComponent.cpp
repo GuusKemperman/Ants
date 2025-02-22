@@ -33,9 +33,35 @@ namespace
 {
 	struct InternalSimulationSystem : CE::System
 	{
+		InternalSimulationSystem(Ant::AntSimulationComponent& component) : mOuterSimulationComponent(component) {}
+
+		Ant::AntSimulationComponent& mOuterSimulationComponent;
 		Ant::GameStep mNextStep{};
 	};
 	
+}
+
+const Ant::AntSimulationComponent* Ant::AntSimulationComponent::TryGetOwningSimulationComponent(const CE::World& world)
+{
+	const InternalSimulationSystem* system = world.TryGetSystem<InternalSimulationSystem>();
+
+	if (system == nullptr)
+	{
+		return nullptr;
+	}
+
+	return &system->mOuterSimulationComponent;
+}
+
+const Ant::GameState* Ant::AntSimulationComponent::TryGetGameState(const CE::World& world)
+{
+	const AntSimulationComponent* component = TryGetOwningSimulationComponent(world);
+
+	if (component == nullptr)
+	{
+		return nullptr;
+	}
+	return &component->GetGameState();
 }
 
 Ant::GameStep* Ant::AntSimulationComponent::TryGetNextGameStep(CE::World& world)
@@ -54,7 +80,7 @@ Ant::GameStep* Ant::AntSimulationComponent::TryGetNextGameStep(CE::World& world)
 void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 {
 	CE::World& world = mCurrentState.GetWorld();
-	world.AddSystem<InternalSimulationSystem>();
+	world.AddSystem<InternalSimulationSystem>(*this);
 
 	if (!viewportWorld->GetRegistry().View<SimulationRenderingComponent>().empty())
 	{
@@ -99,17 +125,16 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 						commandBuffer.Reserve(numReserved);
 					});
 
-				SpawnFood(world, nextStep->GetBuffer<SpawnFoodCommand>());
-				world.GetPhysics().RebuildBVHs();
+				// Collect commands
 				world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
-
-				for (auto [entity, nest] : world.GetRegistry().View<AntNestComponent>().each())
-				{
-					nest.SpendFoodOnSpawning(*nextStep);
-				}
+				CollectSpawnAntsCommands(world, *nextStep);
+				CollectSpawnFoodCommands(world, nextStep->GetBuffer<SpawnFoodCommand>());
 
 				mCurrentState.Step(*nextStep);
 				mStepsSimulated++;
+
+				EvaporatePheromones(world);
+				world.GetPhysics().RebuildBVHs();
 
 				if (mOnStepCompletedCallback != nullptr)
 				{
@@ -120,7 +145,7 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 	};
 }
 
-void Ant::AntSimulationComponent::SpawnFood(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer)
+void Ant::AntSimulationComponent::CollectSpawnFoodCommands(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer)
 {
 	size_t numOfFood = world.GetRegistry().Storage<FoodPelletTag>().size();
 	size_t numOfFoodToSpawn = numOfFood < mMinNumOfFoodInWorld ? mNumOfFoodToSpawn : 0;
@@ -145,6 +170,29 @@ void Ant::AntSimulationComponent::SpawnFood(CE::World& world, CommandBuffer<Spaw
 		const glm::vec2 pos = clusterCentre + dist * CE::Math::AngleToVec2(angle);
 		commandBuffer.AddCommand(pos);
 	}
+}
+
+void Ant::AntSimulationComponent::CollectSpawnAntsCommands(CE::World& world, GameStep& nextStep)
+{
+	for (auto [entity, nest] : world.GetRegistry().View<AntNestComponent>().each())
+	{
+		nest.SpendFoodOnSpawning(nextStep);
+	}
+}
+
+void Ant::AntSimulationComponent::EvaporatePheromones(CE::World& world)
+{
+	CE::Registry& reg = world.GetRegistry();
+	for (auto [entity, pheromone] : reg.View<PheromoneComponent>().each())
+	{
+		pheromone.mAmount -= PheromoneComponent::sEvaporationPerSecond;
+
+		if (pheromone.mAmount <= 0.0f)
+		{
+			reg.Destroy(entity, false);
+		}
+	}
+	reg.RemovedDestroyed();
 }
 
 CE::MetaType Ant::AntSimulationComponent::Reflect()

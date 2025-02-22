@@ -198,7 +198,18 @@ void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner,
 		return;
 	}
 
-	AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId });
+	const GameState* state = AntSimulationComponent::TryGetGameState(world);
+
+	if (state == nullptr)
+	{
+		LOG(LogGame, Error, "No state");
+		return;
+	}
+
+	if (EmitPheromoneCommand::CanSpawnPheromoneNextTick(*state))
+	{
+		AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId });
+	}
 }
 
 bool Ant::SenseResult::SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const
