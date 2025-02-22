@@ -165,10 +165,12 @@ float Ant::AntBaseComponent::DetectPheromones(const CE::World& world,
 		return 0.0f;
 	}
 
+	senseLocation = CE::Math::ClampLength(senseLocation, 0.0f, sMaxDetectPheromonesRange);
+
 	const glm::vec2 senseLocationWorld = ant->mWorldPosition +
 		CE::Math::RotateVec2ByAngleInRadians(senseLocation, ant->mWorldOrientation);
 
-	CE::TransformedDisk queryShape{ senseLocationWorld, 1.0f };
+	CE::TransformedDisk queryShape{ senseLocationWorld, sPheromoneDetectionSampleRadius };
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
@@ -280,6 +282,10 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Set(CE::Props::sIsScriptPure, true);
 
 	metaType.AddFunc([] { return sMaxSenseRange;  }, "GetSenseRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
+
+	metaType.AddFunc([] { return sMaxDetectPheromonesRange;  }, "GetDetectPheromonesRange").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, true);
 

@@ -43,7 +43,22 @@ void Ant::GameState::Step(const GameStep& step)
 			Internal::ProcessCommands(mWorld, commandBuffer);
 		});
 
+	EvaporatePheromones();
 	mWorld.GetRegistry().RemovedDestroyed();
 
 	mNumStepsCompleted++;
+}
+
+void Ant::GameState::EvaporatePheromones()
+{
+	CE::Registry& reg = mWorld.GetRegistry();
+	for (auto [entity, pheromone] : reg.View<PheromoneComponent>().each())
+	{
+		pheromone.mAmount -= PheromoneComponent::sEvaporationPerSecond;
+
+		if (pheromone.mAmount <= 0.0f)
+		{
+			reg.Destroy(entity, false);
+		}
+	}
 }

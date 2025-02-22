@@ -47,7 +47,6 @@ namespace Ant
 	private:
 		void CollectSpawnFoodCommands(CE::World& world, CommandBuffer<SpawnFoodCommand>& commandBuffer);
 		static void CollectSpawnAntsCommands(CE::World& world, GameStep& nextStep);
-		static void EvaporatePheromones(CE::World& world);
 
 		GameState mCurrentState{};
 		std::function<void(const GameStep&)> mOnStepCompletedCallback{};

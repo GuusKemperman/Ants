@@ -35,6 +35,8 @@ namespace Ant
 
 		static constexpr float sMaxSenseRange = 5.0f;
 		static constexpr float sInteractRange = 2.0f;
+		static constexpr float sMaxDetectPheromonesRange = 20.0f;
+		static constexpr float sPheromoneDetectionSampleRadius = 10.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
 

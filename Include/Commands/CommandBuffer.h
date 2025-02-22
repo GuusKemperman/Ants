@@ -36,7 +36,6 @@ namespace Ant
 
 		void Clear()
 		{
-			mCommands.clear();
 			mCommandsInUse = 0;
 		}
 

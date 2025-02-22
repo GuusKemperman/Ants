@@ -133,7 +133,6 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 				mCurrentState.Step(*nextStep);
 				mStepsSimulated++;
 
-				EvaporatePheromones(world);
 				world.GetPhysics().RebuildBVHs();
 
 				if (mOnStepCompletedCallback != nullptr)
@@ -178,21 +177,6 @@ void Ant::AntSimulationComponent::CollectSpawnAntsCommands(CE::World& world, Gam
 	{
 		nest.SpendFoodOnSpawning(nextStep);
 	}
-}
-
-void Ant::AntSimulationComponent::EvaporatePheromones(CE::World& world)
-{
-	CE::Registry& reg = world.GetRegistry();
-	for (auto [entity, pheromone] : reg.View<PheromoneComponent>().each())
-	{
-		pheromone.mAmount -= PheromoneComponent::sEvaporationPerSecond;
-
-		if (pheromone.mAmount <= 0.0f)
-		{
-			reg.Destroy(entity, false);
-		}
-	}
-	reg.RemovedDestroyed();
 }
 
 CE::MetaType Ant::AntSimulationComponent::Reflect()
