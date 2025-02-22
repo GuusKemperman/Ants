@@ -37,5 +37,5 @@ void Ant::EmitPheromoneCommand::Execute(CE::World& world, std::span<const EmitPh
 
 bool Ant::EmitPheromoneCommand::CanSpawnPheromoneNextTick(const GameState& state)
 {
-	return state.GetNumOfStepsCompleted() % sPheromoneSpawnInterval == 1;
+	return state.GetNumOfStepsCompleted() % sPheromoneSpawnInterval == 0;
 }

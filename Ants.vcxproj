@@ -246,6 +246,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Ants\Precomp.h" />
     <ClInclude Include="Include\Commands\CommandBuffer.h" />
+    <ClInclude Include="Include\Commands\DetectPheromoneCommand.h" />
     <ClInclude Include="Include\Commands\EmitPheromoneCommand.h" />
     <ClInclude Include="Include\Commands\GameStep.h" />
     <ClInclude Include="Include\Commands\InteractCommand.h" />

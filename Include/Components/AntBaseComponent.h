@@ -35,8 +35,8 @@ namespace Ant
 
 		static constexpr float sMaxSenseRange = 5.0f;
 		static constexpr float sInteractRange = 2.0f;
-		static constexpr float sMaxDetectPheromonesRange = 20.0f;
-		static constexpr float sPheromoneDetectionSampleRadius = 10.0f;
+		static constexpr float sMaxDetectPheromonesRange = 15.0f;
+		static constexpr float sPheromoneDetectionSampleRadius = 5.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
 
@@ -44,7 +44,7 @@ namespace Ant
 
 		static SenseResult Sense(CE::World& world, entt::entity owner, glm::vec2 senseLocation);
 
-		static float DetectPheromones(const CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
+		static float DetectPheromones(CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
 
 		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId);
 

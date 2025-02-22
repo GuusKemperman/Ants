@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Components/AntBaseComponent.h"
 
-#include "Commands/EmitPheromoneCommand.h"
 #include "Components/AntNestComponent.h"
 #include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
@@ -9,7 +8,6 @@
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
-#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
@@ -57,11 +55,16 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	}
 
 	const glm::vec2 worldStart = ant->mWorldPosition;
-	const glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
-	const glm::vec2 newPosition = worldStart + delta;
+	glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
+	glm::vec2 newPosition = worldStart + delta;
+
+	if (glm::length2(newPosition) > 100'000.0f)
+	{
+		delta = -delta;
+		newPosition = worldStart + delta;
+	}
 
 	const float newOrientation = CE::Math::Vec2ToAngle(delta);
-
 	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
 
@@ -106,10 +109,9 @@ namespace
 {
 	struct PheromoneSmellingOnIntersect
 	{
-		static void Callback(const CE::TransformedDisk& shape,
+		static void Callback(const CE::TransformedDisk&,
 			entt::entity entity,
 			const entt::storage_for_t<Ant::PheromoneComponent>& storage,
-			const CE::TransformedDisk& queryShape,
 			float& totalSmelled,
 			Ant::PheromoneId pheromoneId)
 		{
@@ -125,8 +127,7 @@ namespace
 				return;
 			}
 
-			const float distToPheromoneCentre = glm::distance(shape.mCentre, queryShape.mCentre) - queryShape.mRadius;
-			totalSmelled += pheromoneComponent.GetPheromoneAmountAtDist(distToPheromoneCentre);
+			totalSmelled += pheromoneComponent.mAmount;
 		}
 
 		template<typename... Args>
@@ -143,7 +144,7 @@ namespace
 	};
 }
 
-float Ant::AntBaseComponent::DetectPheromones(const CE::World& world, 
+float Ant::AntBaseComponent::DetectPheromones(CE::World& world, 
 	entt::entity owner, 
 	glm::vec2 senseLocation,
 	PheromoneId pheromoneId)
@@ -182,10 +183,11 @@ float Ant::AntBaseComponent::DetectPheromones(const CE::World& world,
 		queryShape, 
 		rules, 
 		*pheromoneStorage, 
-		queryShape,
 		totalSmelled,
 		pheromoneId);
 
+	AntSimulationComponent::RecordCommand<DetectPheromoneCommand>(world,
+		{ owner, pheromoneId, senseLocationWorld, totalSmelled });
 	return totalSmelled;
 }
 

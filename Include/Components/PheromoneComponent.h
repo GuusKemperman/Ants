@@ -5,11 +5,11 @@ namespace Ant
 {
 	using PheromoneId = int32;
 
+	glm::vec4 PheromoneIdToColor(PheromoneId id);
+
 	class PheromoneComponent
 	{
 	public:
-		float GetPheromoneAmountAtDist(float distToCentre) const;
-
 		static constexpr float sInitialAmount = 1.0f;
 		static constexpr float sPheromoneDuration = 300.0f;
 		static constexpr float sEvaporationPerSecond = sInitialAmount / sPheromoneDuration;

@@ -85,8 +85,6 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 
 	const CE::World& world = mRenderingState->GetWorld();
 
-
-
 	auto renderingView = viewportWorld.GetRegistry().View<SimulationRenderingComponent>();
 	entt::entity renderingEntity = renderingView.front();
 
@@ -101,9 +99,9 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 	
 	const CE::TransformComponent& camTransform = camView.get<CE::TransformComponent>(camEntity);
 
-
-	{ // Pheromones
-		const glm::mat4 pheromoneMatrix = CE::TransformComponent::ToMatrix({},
+	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::Particles))
+	{
+		const glm::mat4 pheromoneMatrix = CE::TransformComponent::ToMatrix({ 0.0f, 0.0f, -2.0f },
 			glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
 			glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
 
@@ -122,17 +120,12 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 
 		for (auto [entity, transform, pheromone] : world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>().each())
 		{
-			glm::vec4 col{ 0.0f, 0.0f, 0.0f, 1.0f };
-			col[0] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 1));
-			col[1] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 2));
-			col[2] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 4));
-
 			CE::Renderer::Get().AddStaticMesh(renderQueue,
 				pheromoneMesh,
 				mMat,
 				transform.GetWorldMatrix() * pheromoneMatrix,
 				glm::vec4{ 0.0f },
-				col);
+				PheromoneIdToColor(pheromone.mPheromoneId));
 		}
 	}
 
@@ -209,22 +202,26 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 		}
 	}
 
-	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::AIDecision))
+	if (!CE::IsDebugDrawCategoryVisible(CE::DebugDraw::AIDecision))
 	{
-		const GameStep mostRecentGameStep = [&]() -> GameStep
+		return;
+	}
+
+	const GameStep mostRecentGameStep = [&]() -> GameStep
+		{
+			std::lock_guard l{ mRenderingQueueMutex }; 
+			uint64 numStepsCompleted = mRenderingState->GetNumOfStepsCompleted();
+
+			if (numStepsCompleted == 0
+				|| numStepsCompleted > mRenderingQueue.size())
 			{
-				std::lock_guard l{ mRenderingQueueMutex }; 
-				uint64 numStepsCompleted = mRenderingState->GetNumOfStepsCompleted();
+				return {};
+			}
 
-				if (numStepsCompleted == 0
-					|| numStepsCompleted > mRenderingQueue.size())
-				{
-					return {};
-				}
+			return mRenderingQueue[numStepsCompleted - 1];
+		}();
 
-				return mRenderingQueue[numStepsCompleted - 1];
-			}();
-
+	{ // Visualise sense commands
 		const CommandBuffer<SenseCommand>& senseCommands = mostRecentGameStep.GetBuffer<SenseCommand>();
 
 		for (const SenseCommand& command : senseCommands.GetStoredCommands())
@@ -255,6 +252,37 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			}
 		}
 	}
+
+	const auto& detectPheromoneCommands = mostRecentGameStep.GetBuffer<DetectPheromoneCommand>().GetStoredCommands();
+
+	if (detectPheromoneCommands.empty())
+	{
+		return;
+	}
+
+	for (const DetectPheromoneCommand& command : detectPheromoneCommands)
+	{
+		if (!antView.contains(command.mAnt))
+		{
+			continue;
+		}
+
+		const AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
+		const glm::vec4 color = PheromoneIdToColor(command.mPheromoneId);
+
+		CE::AddDebugCircle(renderQueue,
+			CE::DebugDraw::AIDecision,
+			CE::To3D(command.mSenseLocationWorld, 1.0f),
+			AntBaseComponent::sPheromoneDetectionSampleRadius,
+			color);
+
+		CE::AddDebugLine(renderQueue,
+			CE::DebugDraw::AIDecision,
+			CE::To3D(ant.mPreviousWorldPosition, 1.0f),
+			CE::To3D(command.mSenseLocationWorld, 1.0f),
+			color);
+	}
+	
 }
 
 float Internal::InterpolateAngle(float a1, float a2, float alpha)

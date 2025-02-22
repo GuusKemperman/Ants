@@ -4,15 +4,13 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-float Ant::PheromoneComponent::GetPheromoneAmountAtDist(float distToCentre) const
+glm::vec4 Ant::PheromoneIdToColor(PheromoneId id)
 {
-	float s = distToCentre / sRadius;
-	float s2 = s * 2;
-	float f = 3.0f;
-
-	float intensity = CE::Math::sqr(1.0f - s2) / (1.0f + f * s2);
-	float percentageRemaining = mAmount / sInitialAmount;
-	return intensity * percentageRemaining;
+	glm::vec4 col{ 0.0f, 0.0f, 0.0f, 1.0f };
+	col[0] = static_cast<float>(static_cast<bool>(id & 1));
+	col[1] = static_cast<float>(static_cast<bool>(id & 2));
+	col[2] = static_cast<float>(static_cast<bool>(id & 4));
+	return col;
 }
 
 CE::MetaType Ant::PheromoneComponent::Reflect()
