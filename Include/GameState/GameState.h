@@ -20,6 +20,9 @@ namespace Ant
 		const CE::World& GetWorld() const { return mWorld; }
 
 	private:
+		void EvaporatePheromones();
+		void AgeAnts();
+
 		CE::World mWorld;
 		uint64 mNumStepsCompleted{};
 	};

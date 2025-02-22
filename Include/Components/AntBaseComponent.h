@@ -1,4 +1,5 @@
 #pragma once
+#include "PheromoneComponent.h"
 #include "Meta\Fwd\MetaReflectFwd.h"
 
 namespace CE
@@ -32,23 +33,30 @@ namespace Ant
 	public:
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
+		static constexpr float sMaxSenseRange = 25.0f;
 		static constexpr float sInteractRange = 2.0f;
+		static constexpr float sMaxDetectPheromonesRange = 10.0f;
+		static constexpr float sPheromoneDetectionSampleRadius = 5.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
 
 		static void Move(CE::World& world, entt::entity owner, glm::vec2 towardsLocation);
 
-		static SenseResult Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation);
+		static SenseResult Sense(CE::World& world, entt::entity owner, glm::vec2 senseLocation);
+
+		static float DetectPheromones(CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
+
+		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId);
 
 		glm::vec2 mWorldPosition{};
 		glm::vec2 mPreviousWorldPosition{};
-
-		glm::quat GetWorldOrientationQuat() const;
 
 		float mWorldOrientation{};
 		float mPreviousWorldOrientation{};
 
 		bool mIsHoldingFood{};
+
+		float mTimeLeftAlive = 10'000.0f;
 
 	private:
 		friend CE::ReflectAccess;

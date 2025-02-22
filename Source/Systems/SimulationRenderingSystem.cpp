@@ -1,13 +1,16 @@
 #include "Precomp.h"
 #include "Systems/SimulationRenderingSystem.h"
 
+#include "Commands/SenseCommand.h"
 #include "Components/AntBaseComponent.h"
 #include "Components/AntSimulationComponent.h"
+#include "Components/CameraComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/SimulationRenderingComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/AssetManager.h"
 #include "Core/Renderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -26,19 +29,13 @@ Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 	mAntWalkFrames[2] = assetManager.TryGetAsset<CE::Material>("MT_AntWalk3");
 
 	mAntMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
-	mPheromoneMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
-	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 
-	if (mMat == nullptr
-		|| mAntMesh == nullptr
-		|| mPheromoneMesh == nullptr
-		|| mFoodMesh == nullptr
-		|| mAntWalkFrames[0] == nullptr
-		|| mAntWalkFrames[1] == nullptr
-		|| mAntWalkFrames[2] == nullptr)
-	{
-		LOG(LogGame, Error, "Missing assets");
-	}
+	mPheromoneLODs[0] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD0"), 0.0f };
+	mPheromoneLODs[1] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD1"), 50.0f };
+	mPheromoneLODs[2] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD2"), 200.0f };
+	mPheromoneLODs[3] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD3"), 500.0f };
+
+	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 }
 
 void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
@@ -84,18 +81,6 @@ void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
 {
-	if (mMat == nullptr
-		|| mAntMesh == nullptr
-		|| mPheromoneMesh == nullptr
-		|| mFoodMesh == nullptr
-		|| mAntWalkFrames[0] == nullptr
-		|| mAntWalkFrames[1] == nullptr
-		|| mAntWalkFrames[2] == nullptr)
-	{
-		LOG(LogGame, Error, "Missing assets");
-		return;
-	}
-
 	CE::Renderer::Get().SetClearColor(renderQueue, { 0.5f, 0.3f, 0.15f, 1.0f });
 
 	const CE::World& world = mRenderingState->GetWorld();
@@ -106,6 +91,42 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 	if (renderingEntity == entt::null)
 	{
 		return;
+	}
+
+	auto camView = viewportWorld.GetRegistry().View<CE::TransformComponent, CE::CameraComponent>();
+	entt::entity camEntity = CE::CameraComponent::GetSelected(viewportWorld);
+	ASSERT(camView.contains(camEntity));
+	
+	const CE::TransformComponent& camTransform = camView.get<CE::TransformComponent>(camEntity);
+
+	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::Particles))
+	{
+		const glm::mat4 pheromoneMatrix = CE::TransformComponent::ToMatrix({ 0.0f, 0.0f, -2.0f },
+			glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
+			glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
+
+		float height = camTransform.GetWorldPosition().z;
+		CE::AssetHandle pheromoneMesh = mPheromoneLODs[0].mMesh;
+
+		for (auto& lod : mPheromoneLODs)
+		{
+			if (height < lod.Dist)
+			{
+				break;
+			}
+
+			pheromoneMesh = lod.mMesh;
+		}
+
+		for (auto [entity, transform, pheromone] : world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>().each())
+		{
+			CE::Renderer::Get().AddStaticMesh(renderQueue,
+				pheromoneMesh,
+				mMat,
+				transform.GetWorldMatrix() * pheromoneMatrix,
+				glm::vec4{ 0.0f },
+				PheromoneIdToColor(pheromone.mPheromoneId));
+		}
 	}
 
 	for (auto [entity, transform] : world.GetRegistry().View<CE::TransformComponent, FoodPelletTag>().each())
@@ -180,6 +201,88 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 				sFoodCol);
 		}
 	}
+
+	if (!CE::IsDebugDrawCategoryVisible(CE::DebugDraw::AIDecision))
+	{
+		return;
+	}
+
+	const GameStep mostRecentGameStep = [&]() -> GameStep
+		{
+			std::lock_guard l{ mRenderingQueueMutex }; 
+			uint64 numStepsCompleted = mRenderingState->GetNumOfStepsCompleted();
+
+			if (numStepsCompleted == 0
+				|| numStepsCompleted > mRenderingQueue.size())
+			{
+				return {};
+			}
+
+			return mRenderingQueue[numStepsCompleted - 1];
+		}();
+
+	{ // Visualise sense commands
+		const CommandBuffer<SenseCommand>& senseCommands = mostRecentGameStep.GetBuffer<SenseCommand>();
+
+		for (const SenseCommand& command : senseCommands.GetStoredCommands())
+		{
+			if (antView.contains(command.mAnt))
+			{
+				const AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
+				constexpr float lineHeight = 2.0f;
+				const glm::vec2 direction = glm::normalize(command.mSenseLocationWorld - ant.mPreviousWorldPosition);
+
+				const glm::vec2 nonHitLineStart = ant.mPreviousWorldPosition + direction * command.mDist;
+				const glm::vec2 nonHitLineEnd = command.mSenseLocationWorld;
+
+				const glm::vec2 hitLineStart = ant.mPreviousWorldPosition;
+				const glm::vec2 hitLineEnd = nonHitLineStart;
+
+				CE::AddDebugLine(renderQueue,
+					CE::DebugDraw::AIDecision,
+					CE::To3D(nonHitLineStart, lineHeight),
+					CE::To3D(nonHitLineEnd, lineHeight),
+					glm::vec4{ 1.0f, 1.0f, 1.0f, .2f });
+
+				CE::AddDebugLine(renderQueue,
+					CE::DebugDraw::AIDecision,
+					CE::To3D(hitLineStart, lineHeight),
+					CE::To3D(hitLineEnd, lineHeight),
+					glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+			}
+		}
+	}
+
+	const auto& detectPheromoneCommands = mostRecentGameStep.GetBuffer<DetectPheromoneCommand>().GetStoredCommands();
+
+	if (detectPheromoneCommands.empty())
+	{
+		return;
+	}
+
+	for (const DetectPheromoneCommand& command : detectPheromoneCommands)
+	{
+		if (!antView.contains(command.mAnt))
+		{
+			continue;
+		}
+
+		const AntBaseComponent& ant = antView.get<AntBaseComponent>(command.mAnt);
+		const glm::vec4 color = PheromoneIdToColor(command.mPheromoneId);
+
+		CE::AddDebugCircle(renderQueue,
+			CE::DebugDraw::AIDecision,
+			CE::To3D(command.mSenseLocationWorld, 1.0f),
+			AntBaseComponent::sPheromoneDetectionSampleRadius,
+			color);
+
+		CE::AddDebugLine(renderQueue,
+			CE::DebugDraw::AIDecision,
+			CE::To3D(ant.mPreviousWorldPosition, 1.0f),
+			CE::To3D(command.mSenseLocationWorld, 1.0f),
+			color);
+	}
+	
 }
 
 float Internal::InterpolateAngle(float a1, float a2, float alpha)

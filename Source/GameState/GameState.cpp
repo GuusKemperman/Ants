@@ -3,6 +3,7 @@
 
 #include "Assets/Level.h"
 #include "Commands/GameStep.h"
+#include "Components/AntBaseComponent.h"
 #include "Core/AssetManager.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -12,7 +13,7 @@ namespace Internal
 	template<typename T>
 	static void ProcessCommands(CE::World& world, const Ant::CommandBuffer<T>& commandBuffer)
 	{
-		T::Execute(world, commandBuffer.GetSubmittedCommands());
+		T::Execute(world, commandBuffer.GetStoredCommands());
 	}
 }
 
@@ -43,7 +44,37 @@ void Ant::GameState::Step(const GameStep& step)
 			Internal::ProcessCommands(mWorld, commandBuffer);
 		});
 
+	EvaporatePheromones();
+	AgeAnts();
 	mWorld.GetRegistry().RemovedDestroyed();
 
 	mNumStepsCompleted++;
+}
+
+void Ant::GameState::EvaporatePheromones()
+{
+	CE::Registry& reg = mWorld.GetRegistry();
+	for (auto [entity, pheromone] : reg.View<PheromoneComponent>().each())
+	{
+		pheromone.mAmount -= PheromoneComponent::sEvaporationPerSecond;
+
+		if (pheromone.mAmount <= 0.0f)
+		{
+			reg.Destroy(entity, false);
+		}
+	}
+}
+
+void Ant::GameState::AgeAnts()
+{
+	CE::Registry& reg = mWorld.GetRegistry();
+	for (auto [entity, ant] : reg.View<AntBaseComponent>().each())
+	{
+		ant.mTimeLeftAlive -= sStepDurationSeconds;
+
+		if (ant.mTimeLeftAlive <= 0.0f)
+		{
+			reg.Destroy(entity, false);
+		}
+	}
 }

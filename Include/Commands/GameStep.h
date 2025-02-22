@@ -1,9 +1,13 @@
 #pragma once
+#include "SenseCommand.h"
 #include "Commands/CommandBuffer.h"
 #include "Commands/InteractCommand.h"
 #include "Commands/MoveCommand.h"
 #include "Commands/SpawnAntCommand.h"
 #include "Commands/SpawnFoodCommand.h"
+#include "Commands/EmitPheromoneCommand.h"
+#include "Commands/SenseCommand.h"
+#include "Commands/DetectPheromoneCommand.h"
 
 namespace Ant
 {
@@ -64,7 +68,10 @@ namespace Ant
 			{
 				return mBuffer;
 			}
-			return Base::template GetBuffer<C>();
+			else
+			{
+				return Base::template GetBuffer<C>();
+			}
 		}
 
 	private:
@@ -72,5 +79,12 @@ namespace Ant
 	};
 
 	// Could also be a "using GameStep = ...", but now we can forward declare GameStep
-	class GameStep final : public GameStepBase<MoveCommand, InteractCommand, SpawnAntCommand, SpawnFoodCommand> {};
+	class GameStep final : public GameStepBase<
+		MoveCommand,
+	EmitPheromoneCommand,
+	InteractCommand,
+	SpawnAntCommand,
+	SpawnFoodCommand,
+	SenseCommand,
+	DetectPheromoneCommand> {};
 }

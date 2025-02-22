@@ -4,10 +4,10 @@
 #include "Components/AntNestComponent.h"
 #include "Components/AntSimulationComponent.h"
 #include "Components/FoodPelletTag.h"
+#include "Components/PheromoneComponent.h"
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
-#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
@@ -55,15 +55,20 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	}
 
 	const glm::vec2 worldStart = ant->mWorldPosition;
-	const glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
-	const glm::vec2 newPosition = worldStart + delta;
+	glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
+	glm::vec2 newPosition = worldStart + delta;
+
+	if (glm::length2(newPosition) > 100'000.0f)
+	{
+		delta = -delta;
+		newPosition = worldStart + delta;
+	}
 
 	const float newOrientation = CE::Math::Vec2ToAngle(delta);
-
 	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
 
-Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::entity owner, glm::vec2 senseLocation)
+Ant::SenseResult Ant::AntBaseComponent::Sense(CE::World& world, entt::entity owner, glm::vec2 senseLocation)
 {
 	SenseResult senseResult{};
 
@@ -83,12 +88,10 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 
 	const glm::vec2 startWorld = ant->mWorldPosition;
 
-	const float dirLength = glm::length(senseLocation);
-
-	const glm::vec2 normalisedDirLocal = senseLocation / dirLength;
+	senseLocation = CE::Math::ClampLength(senseLocation, 0.0f, sMaxSenseRange);
 
 	const glm::vec2 endWorld = startWorld + 
-		CE::Math::RotateVec2ByAngleInRadians(normalisedDirLocal, ant->mWorldOrientation) * dirLength;
+		CE::Math::RotateVec2ByAngleInRadians(senseLocation, ant->mWorldOrientation);
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
@@ -98,24 +101,119 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(const CE::World& world, entt::enti
 
 	senseResult.mDist = physicsResult.mDist;
 	senseResult.mHitEntity = physicsResult.mHitEntity;
-
-	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::Gameplay))
-	{
-		CE::AddDebugLine(const_cast<CE::RenderCommandQueue&>(world.GetRenderCommandQueue()),
-			CE::DebugDraw::Gameplay,
-			CE::To3D(startWorld),
-			CE::To3D(startWorld + glm::normalize(endWorld - startWorld) * senseResult.mDist),
-			glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-	}
-
+	AntSimulationComponent::RecordCommand<SenseCommand>(world, { owner, endWorld, senseResult.mDist });
 	return senseResult;
 }
 
-glm::quat Ant::AntBaseComponent::GetWorldOrientationQuat() const
+namespace
 {
-	glm::vec3 orientationEuler{};
-	orientationEuler[CE::Axis::Up] = mWorldOrientation;
-	return { orientationEuler };
+	struct PheromoneSmellingOnIntersect
+	{
+		static void Callback(const CE::TransformedDisk&,
+			entt::entity entity,
+			const entt::storage_for_t<Ant::PheromoneComponent>& storage,
+			float& totalSmelled,
+			Ant::PheromoneId pheromoneId)
+		{
+			if (!storage.contains(entity))
+			{
+				LOG(LogGame, Error, "Entity unexpectedly did not have pheromone component, while being in pheromone channel");
+				return;
+			}
+			const Ant::PheromoneComponent& pheromoneComponent = storage.get(entity);
+
+			if (pheromoneComponent.mPheromoneId != pheromoneId)
+			{
+				return;
+			}
+
+			totalSmelled += pheromoneComponent.mAmount;
+		}
+
+		template<typename... Args>
+		static void Callback(const CE::TransformedAABB&, Args&&...)
+		{
+			LOG(LogGame, Error, "Entity unexpectedly had a non-disk collider, while being in pheromone channel");
+		}
+
+		template<typename... Args>
+		static void Callback(const CE::TransformedPolygon&, Args&&...)
+		{
+			LOG(LogGame, Error, "Entity unexpectedly had a non-disk collider, while being in pheromone channel");
+		}
+	};
+}
+
+float Ant::AntBaseComponent::DetectPheromones(CE::World& world, 
+	entt::entity owner, 
+	glm::vec2 senseLocation,
+	PheromoneId pheromoneId)
+{
+	const CE::Registry& reg = world.GetRegistry();
+	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
+
+	if (ant == nullptr)
+	{
+		LOG(LogGame, Error, "No ant component");
+		return 0.0f;
+	}
+
+	const entt::storage_for_t<PheromoneComponent>* pheromoneStorage = reg.Storage<PheromoneComponent>();
+
+	if (pheromoneStorage == nullptr)
+	{
+		LOG(LogGame, Warning, "Pheromone storage was nullptr, uninitialised storage could lead to threading issues");
+		return 0.0f;
+	}
+
+	senseLocation = CE::Math::ClampLength(senseLocation, 0.0f, sMaxDetectPheromonesRange);
+
+	const glm::vec2 senseLocationWorld = ant->mWorldPosition +
+		CE::Math::RotateVec2ByAngleInRadians(senseLocation, ant->mWorldOrientation);
+
+	CE::TransformedDisk queryShape{ senseLocationWorld, sPheromoneDetectionSampleRadius };
+
+	CE::CollisionRules rules{};
+	rules.mLayer = CE::CollisionLayer::Query;
+	rules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
+
+	float totalSmelled = 0.0f;
+
+	world.GetPhysics().Query<PheromoneSmellingOnIntersect, CE::BVH::DefaultShouldCheckFunction<true>, CE::BVH::DefaultShouldReturnFunction<false>>(
+		queryShape, 
+		rules, 
+		*pheromoneStorage, 
+		totalSmelled,
+		pheromoneId);
+
+	AntSimulationComponent::RecordCommand<DetectPheromoneCommand>(world,
+		{ owner, pheromoneId, senseLocationWorld, totalSmelled });
+	return totalSmelled;
+}
+
+void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId)
+{
+	const CE::Registry& reg = world.GetRegistry();
+	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
+
+	if (ant == nullptr)
+	{
+		LOG(LogGame, Error, "No ant component");
+		return;
+	}
+
+	const GameState* state = AntSimulationComponent::TryGetGameState(world);
+
+	if (state == nullptr)
+	{
+		LOG(LogGame, Error, "No state");
+		return;
+	}
+
+	if (EmitPheromoneCommand::CanSpawnPheromoneNextTick(*state))
+	{
+		AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId });
+	}
 }
 
 bool Ant::SenseResult::SensedComponent(const CE::World& world, CE::TypeId componentTypeId) const
@@ -165,6 +263,10 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
 
+	metaType.AddFunc(&AntBaseComponent::DetectPheromones, "DetectPheromones").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, false);
+
 	metaType.AddFunc(&AntBaseComponent::Move, "Move").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
@@ -173,7 +275,19 @@ CE::MetaType Ant::AntBaseComponent::Reflect()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, false);
 
+	metaType.AddFunc(&AntBaseComponent::EmitPheromones, "EmitPheromones").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, false);
+
 	metaType.AddFunc([] { return sInteractRange;  }, "GetInteractRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
+
+	metaType.AddFunc([] { return sMaxSenseRange;  }, "GetSenseRange").GetProperties()
+		.Add(CE::Props::sIsScriptableTag)
+		.Set(CE::Props::sIsScriptPure, true);
+
+	metaType.AddFunc([] { return sMaxDetectPheromonesRange;  }, "GetDetectPheromonesRange").GetProperties()
 		.Add(CE::Props::sIsScriptableTag)
 		.Set(CE::Props::sIsScriptPure, true);
 
