@@ -26,7 +26,13 @@ namespace Ant
 		std::array<CE::AssetHandle<CE::Material>, 3> mAntWalkFrames{};
 
 		CE::AssetHandle<CE::StaticMesh> mAntMesh{};
-		CE::AssetHandle<CE::StaticMesh> mPheromoneMesh{};
+
+		struct LODMesh
+		{
+			CE::AssetHandle<CE::StaticMesh> mMesh{};
+			float Dist{};
+		};
+		std::array<LODMesh, 4> mPheromoneLODs{};
 		CE::AssetHandle<CE::StaticMesh> mFoodMesh{};
 
 		static constexpr glm::vec4 sFoodCol{ 0.0f, 1.0f, 0.0f, 1.0f };

@@ -4,6 +4,7 @@
 #include "Commands/SenseCommand.h"
 #include "Components/AntBaseComponent.h"
 #include "Components/AntSimulationComponent.h"
+#include "Components/CameraComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/SimulationRenderingComponent.h"
 #include "Components/TransformComponent.h"
@@ -28,19 +29,13 @@ Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 	mAntWalkFrames[2] = assetManager.TryGetAsset<CE::Material>("MT_AntWalk3");
 
 	mAntMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
-	mPheromoneMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
-	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 
-	if (mMat == nullptr
-		|| mAntMesh == nullptr
-		|| mPheromoneMesh == nullptr
-		|| mFoodMesh == nullptr
-		|| mAntWalkFrames[0] == nullptr
-		|| mAntWalkFrames[1] == nullptr
-		|| mAntWalkFrames[2] == nullptr)
-	{
-		LOG(LogGame, Error, "Missing assets");
-	}
+	mPheromoneLODs[0] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD0"), 0.0f };
+	mPheromoneLODs[1] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD1"), 50.0f };
+	mPheromoneLODs[2] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD2"), 200.0f };
+	mPheromoneLODs[3] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD3"), 500.0f };
+
+	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 }
 
 void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
@@ -86,21 +81,11 @@ void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
 {
-	if (mMat == nullptr
-		|| mAntMesh == nullptr
-		|| mPheromoneMesh == nullptr
-		|| mFoodMesh == nullptr
-		|| mAntWalkFrames[0] == nullptr
-		|| mAntWalkFrames[1] == nullptr
-		|| mAntWalkFrames[2] == nullptr)
-	{
-		LOG(LogGame, Error, "Missing assets");
-		return;
-	}
-
 	CE::Renderer::Get().SetClearColor(renderQueue, { 0.5f, 0.3f, 0.15f, 1.0f });
 
 	const CE::World& world = mRenderingState->GetWorld();
+
+
 
 	auto renderingView = viewportWorld.GetRegistry().View<SimulationRenderingComponent>();
 	entt::entity renderingEntity = renderingView.front();
@@ -110,10 +95,30 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 		return;
 	}
 
+	auto camView = viewportWorld.GetRegistry().View<CE::TransformComponent, CE::CameraComponent>();
+	entt::entity camEntity = CE::CameraComponent::GetSelected(viewportWorld);
+	ASSERT(camView.contains(camEntity));
+	
+	const CE::TransformComponent& camTransform = camView.get<CE::TransformComponent>(camEntity);
+
+
 	{ // Pheromones
 		const glm::mat4 pheromoneMatrix = CE::TransformComponent::ToMatrix({},
 			glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
 			glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
+
+		float height = camTransform.GetWorldPosition().z;
+		CE::AssetHandle pheromoneMesh = mPheromoneLODs[0].mMesh;
+
+		for (auto& lod : mPheromoneLODs)
+		{
+			if (height < lod.Dist)
+			{
+				break;
+			}
+
+			pheromoneMesh = lod.mMesh;
+		}
 
 		for (auto [entity, transform, pheromone] : world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>().each())
 		{
@@ -123,7 +128,7 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			col[2] = static_cast<float>(static_cast<bool>(pheromone.mPheromoneId & 4));
 
 			CE::Renderer::Get().AddStaticMesh(renderQueue,
-				mPheromoneMesh,
+				pheromoneMesh,
 				mMat,
 				transform.GetWorldMatrix() * pheromoneMatrix,
 				glm::vec4{ 0.0f },
