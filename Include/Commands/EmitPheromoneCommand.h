@@ -17,7 +17,7 @@ namespace Ant
 	{
 		static void Execute(CE::World& world, std::span<const EmitPheromoneCommand> commands);
 
-		static constexpr uint32 sPheromoneSpawnInterval = 10;
+		static constexpr uint32 sPheromoneSpawnInterval = 6;
 
 		static bool CanSpawnPheromoneNextTick(const GameState& state);
 

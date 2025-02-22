@@ -11,7 +11,7 @@ namespace Ant
 	{
 	public:
 		static constexpr float sInitialAmount = 1.0f;
-		static constexpr float sPheromoneDuration = 300.0f;
+		static constexpr float sPheromoneDuration = 250.0f;
 		static constexpr float sEvaporationPerSecond = sInitialAmount / sPheromoneDuration;
 
 		static constexpr float sRadius = 1.0f;

@@ -21,6 +21,7 @@ namespace Ant
 
 	private:
 		void EvaporatePheromones();
+		void AgeAnts();
 
 		CE::World mWorld;
 		uint64 mNumStepsCompleted{};

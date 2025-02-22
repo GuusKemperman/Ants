@@ -33,9 +33,9 @@ namespace Ant
 	public:
 		static bool IsCarryingFood(const CE::World& world, entt::entity owner);
 
-		static constexpr float sMaxSenseRange = 5.0f;
+		static constexpr float sMaxSenseRange = 25.0f;
 		static constexpr float sInteractRange = 2.0f;
-		static constexpr float sMaxDetectPheromonesRange = 15.0f;
+		static constexpr float sMaxDetectPheromonesRange = 10.0f;
 		static constexpr float sPheromoneDetectionSampleRadius = 5.0f;
 
 		static void Interact(CE::World& world, entt::entity owner);
@@ -55,6 +55,8 @@ namespace Ant
 		float mPreviousWorldOrientation{};
 
 		bool mIsHoldingFood{};
+
+		float mTimeLeftAlive = 10'000.0f;
 
 	private:
 		friend CE::ReflectAccess;
