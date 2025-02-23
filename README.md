@@ -1,6 +1,10 @@
 # Welcome to Ants!
 
-This is a work in progress game I am making in my free time. More updates will come, unless I start chasing a new project :)
+A prototype for a game where the players have to script the behaviour of individual ants, with the goal being to bring as much food back to the nest as possible. Heavily inspired by [Sebastian Lague's Ant Simulation](https://www.youtube.com/watch?v=X-iSQQgOd1A).
+
+The prototype has **completely seperate** rendering and simulating threads. The simulation thread produces 'deltas', commands that deterministically alter the world. Both threads keep track of their own worlds, allowing the simulation to run continously in the background while the renderer can use the produced 'deltas' to render a pre-simulated world at an arbitrary timepoint. 
+
+While the prototype proved it was technically feasible, the game idea did not pan out. The core gameplay is flawed, a simple script already does really well, and any significant improvements are terribly difficult to come by. This project will be left behind, but the architecture and vision (of having the player create behaviour to be simulated) will carry over to a future project. 
 
 # Getting started
 
