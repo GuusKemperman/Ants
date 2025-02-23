@@ -133,7 +133,11 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 				mCurrentState.Step(*nextStep);
 				mStepsSimulated++;
 
-				world.GetPhysics().RebuildBVHs();
+				CE::Physics::UpdateBVHConfig config
+				{
+					.mOnlyRebuildForNewColliders = mStepsSimulated % 500 != 1
+				};
+				world.GetPhysics().UpdateBVHs(config);
 
 				if (mOnStepCompletedCallback != nullptr)
 				{
