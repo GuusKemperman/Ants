@@ -23,5 +23,6 @@ namespace Ant
 
 		glm::vec2 mLocation{};
 		PheromoneId mPheromoneId{};
+		float mAmount{};
 	};
 }

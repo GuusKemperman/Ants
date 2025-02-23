@@ -191,8 +191,16 @@ float Ant::AntBaseComponent::DetectPheromones(CE::World& world,
 	return totalSmelled;
 }
 
-void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId)
+void Ant::AntBaseComponent::EmitPheromones(CE::World& world, 
+	entt::entity owner, 
+	PheromoneId pheromoneId, 
+	float amount)
 {
+	if (amount <= PheromoneComponent::sEvaporationPerSecond)
+	{
+		return;
+	}
+
 	const CE::Registry& reg = world.GetRegistry();
 	const AntBaseComponent* ant = reg.TryGet<AntBaseComponent>(owner);
 
@@ -212,7 +220,7 @@ void Ant::AntBaseComponent::EmitPheromones(CE::World& world, entt::entity owner,
 
 	if (EmitPheromoneCommand::CanSpawnPheromoneNextTick(*state))
 	{
-		AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId });
+		AntSimulationComponent::RecordCommand<EmitPheromoneCommand>(world, { ant->mPreviousWorldPosition, pheromoneId, amount });
 	}
 }
 

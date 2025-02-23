@@ -46,7 +46,7 @@ namespace Ant
 
 		static float DetectPheromones(CE::World& world, entt::entity owner, glm::vec2 senseLocation, PheromoneId pheromoneId);
 
-		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId);
+		static void EmitPheromones(CE::World& world, entt::entity owner, PheromoneId pheromoneId, float amount);
 
 		glm::vec2 mWorldPosition{};
 		glm::vec2 mPreviousWorldPosition{};
