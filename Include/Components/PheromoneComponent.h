@@ -25,4 +25,6 @@ namespace Ant
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(PheromoneComponent);
 	};
+
+	struct InactivePheromoneTag {};
 }

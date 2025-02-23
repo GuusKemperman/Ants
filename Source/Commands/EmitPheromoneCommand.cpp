@@ -19,19 +19,41 @@ void Ant::EmitPheromoneCommand::Execute(CE::World& world, std::span<const EmitPh
 	auto& disks = reg.Storage<CE::DiskColliderComponent>();
 	auto& physics = reg.Storage<CE::PhysicsBody2DComponent>();
 
+	auto& inactiveStorage = reg.Storage<InactivePheromoneTag>();
+
+	if (inactiveStorage.size() < commands.size())
+	{
+		for (size_t i = 0; i < commands.size() * 2; i++)
+		{
+			entt::entity entity = reg.Create();
+			inactiveStorage.emplace(entity);
+
+			pheromoneComponentStorage.emplace(entity);
+			transforms.emplace(entity).SetWorldPosition(commands[i / 2].mLocation + glm::vec2{1'000'000} * static_cast<float>((i / 2) + i % 2));
+			disks.emplace(entity, CE::DiskColliderComponent{ PheromoneComponent::sRadius });
+
+			CE::PhysicsBody2DComponent& body = physics.emplace(entity);
+			body.mIsAffectedByForces = false;
+			body.mRules = {};
+			body.mRules.mLayer = CE::CollisionLayer::Query;
+			body.mRules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
+		}
+	}
+
+	auto inactiveRange = inactiveStorage.each();
+	auto currentInactive = inactiveRange.begin();
+
 	for (const EmitPheromoneCommand& command : commands)
 	{
-		entt::entity entity = reg.Create();
+		auto [entity] = *currentInactive;
+		inactiveStorage.erase(entity);
+		++currentInactive;
+		auto& transform = transforms.get(entity);
+		auto& pheromone = pheromoneComponentStorage.get(entity);
 
-		pheromoneComponentStorage.emplace(entity, command.mPheromoneId);
-		transforms.emplace(entity).SetWorldPosition(command.mLocation);
-		disks.emplace(entity, CE::DiskColliderComponent{ PheromoneComponent::sRadius });
-
-		CE::PhysicsBody2DComponent& body = physics.emplace(entity);
-		body.mIsAffectedByForces = false;
-		body.mRules = {};
-		body.mRules.mLayer = CE::CollisionLayer::Query;
-		body.mRules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
+		transform.SetWorldPosition(command.mLocation);
+		pheromone.mAmount = command.mAmount;
+		pheromone.mPheromoneId = command.mPheromoneId;
 	}
 }
 

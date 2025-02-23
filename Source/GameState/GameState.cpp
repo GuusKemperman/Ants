@@ -4,6 +4,7 @@
 #include "Assets/Level.h"
 #include "Commands/GameStep.h"
 #include "Components/AntBaseComponent.h"
+#include "Components/TransformComponent.h"
 #include "Core/AssetManager.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -54,13 +55,18 @@ void Ant::GameState::Step(const GameStep& step)
 void Ant::GameState::EvaporatePheromones()
 {
 	CE::Registry& reg = mWorld.GetRegistry();
-	for (auto [entity, pheromone] : reg.View<PheromoneComponent>().each())
+	auto view = reg.View<CE::TransformComponent, PheromoneComponent>(entt::exclude_t<InactivePheromoneTag>{});
+	auto& inactiveStorage = reg.Storage<InactivePheromoneTag>();
+	for (auto entity : view)
 	{
+		auto& pheromone = view.get<PheromoneComponent>(entity);
 		pheromone.mAmount -= PheromoneComponent::sEvaporationPerSecond;
 
 		if (pheromone.mAmount <= 0.0f)
 		{
-			reg.Destroy(entity, false);
+			CE::TransformComponent& transform = view.get<CE::TransformComponent>(entity);
+			transform.SetLocalPosition(transform.GetLocalPosition() + CE::To3D({ 1'000'000, 1'000'000 }));
+			inactiveStorage.emplace(entity);
 		}
 	}
 }
