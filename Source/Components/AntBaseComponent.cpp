@@ -58,12 +58,6 @@ void Ant::AntBaseComponent::Move(CE::World& world, entt::entity owner, glm::vec2
 	glm::vec2 delta = CE::Math::RotateVec2ByAngleInRadians(towardsLocation, ant->mWorldOrientation);
 	glm::vec2 newPosition = worldStart + delta;
 
-	if (glm::length2(newPosition) > 100'000.0f)
-	{
-		delta = -delta;
-		newPosition = worldStart + delta;
-	}
-
 	const float newOrientation = CE::Math::Vec2ToAngle(delta);
 	AntSimulationComponent::RecordCommand<MoveCommand>(world, { owner, newPosition, newOrientation });
 }
