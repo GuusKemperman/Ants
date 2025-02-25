@@ -169,7 +169,6 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 
 		glm::vec3 orientationEuler{};
 		orientationEuler[CE::Axis::Up] = interpolatedAngle - glm::half_pi<float>();
-		orientationEuler[CE::Axis::Forward] = glm::pi<float>();
 
 		glm::quat interpolatedRot{ orientationEuler };
 
@@ -188,10 +187,7 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 
 		if (ant.mIsHoldingFood)
 		{
-			glm::vec3 foodSlotRotation{};
-			foodSlotRotation[CE::Axis::Up] = -glm::half_pi<float>();
-			const glm::mat4 foodSlot = antMatrix * glm::toMat4(glm::quat{ foodSlotRotation });
-			const glm::mat4 foodMatrix = foodSlot * foodOffsetMatrix;
+			const glm::mat4 foodMatrix = antMatrix * foodOffsetMatrix;
 
 			CE::Renderer::Get().AddStaticMesh(renderQueue,
 				mFoodMesh,
