@@ -56,7 +56,7 @@ namespace Ant
 
 		bool mIsHoldingFood{};
 
-		float mTimeLeftAlive = 10'000.0f;
+		float mTimeLeftAlive = 5'000.0f;
 
 	private:
 		friend CE::ReflectAccess;
