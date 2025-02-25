@@ -1,7 +1,9 @@
 #include "Precomp.h"
 #include "Components/AntSimulationComponent.h"
 
+#include <execution>
 #include <numeric>
+#include <entt/entity/runtime_view.hpp>
 
 #include "Commands/GameStep.h"
 #include "Commands/SpawnFoodCommand.h"
@@ -126,7 +128,34 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 					});
 
 				// Collect commands
-				world.GetEventManager().InvokeEventsForAllComponents(sOnAntTick);
+				for (const CE::BoundEvent& boundEvent : world.GetEventManager().GetBoundEvents(sOnAntTick))
+				{
+					entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+					if (storage == nullptr)
+					{
+						continue;
+					}
+
+					const CE::MetaFunc& func = boundEvent.mFunc.get();
+					static constexpr std::array argForms = { CE::TypeForm::Ref, CE::TypeForm::Ref, CE::TypeForm::ConstRef };
+
+					entt::runtime_view view{};
+					view.iterate(*storage);
+
+					std::for_each(std::execution::par_unseq, view.begin(), view.end(),
+						[&](entt::entity entity)
+						{
+							std::array args{
+								CE::MetaAny{ boundEvent.mType, storage->value(entity), false },
+								CE::MetaAny{ world },
+								CE::MetaAny{ entity }
+							};
+
+							func.InvokeUnchecked(args, argForms);
+						});
+				}
+
 				CollectSpawnAntsCommands(world, *nextStep);
 				CollectSpawnFoodCommands(world, nextStep->GetBuffer<SpawnFoodCommand>());
 
@@ -135,7 +164,7 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 
 				CE::Physics::UpdateBVHConfig config
 				{
-					.mOnlyRebuildForNewColliders = mStepsSimulated % 500 != 1
+					.mOnlyRebuildForNewColliders = mStepsSimulated % 50 == 0
 				};
 				world.GetPhysics().UpdateBVHs(config);
 
