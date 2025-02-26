@@ -105,12 +105,12 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
 			glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
 
-		float height = camTransform.GetWorldPosition().z;
+		const float camHeight = camTransform.GetWorldPosition().z;
 		CE::AssetHandle pheromoneMesh = mPheromoneLODs[0].mMesh;
 
 		for (auto& lod : mPheromoneLODs)
 		{
-			if (height < lod.Dist)
+			if (camHeight < lod.Dist)
 			{
 				break;
 			}
@@ -118,14 +118,19 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			pheromoneMesh = lod.mMesh;
 		}
 
-		for (auto [entity, transform, pheromone] : world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>().each())
+		float pheromoneHeight = 0.0f;
+		auto pheromoneView = world.GetRegistry().View<CE::TransformComponent, PheromoneComponent>(entt::exclude_t<InactivePheromoneTag>{});
+		float pheromoneDt = 1.0f / static_cast<float>(pheromoneView.size_hint());
+
+		for (auto [entity, transform, pheromone] : pheromoneView.each())
 		{
 			CE::Renderer::Get().AddStaticMesh(renderQueue,
 				pheromoneMesh,
 				mMat,
-				transform.GetWorldMatrix() * pheromoneMatrix,
+				glm::translate(transform.GetWorldMatrix() * pheromoneMatrix, glm::vec3{ 0.0f, 0.0f, pheromoneHeight }),
 				glm::vec4{ 0.0f },
 				PheromoneIdToColor(pheromone.mPheromoneId));
+			pheromoneHeight -= pheromoneDt;
 		}
 	}
 
@@ -173,7 +178,7 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 		glm::quat interpolatedRot{ orientationEuler };
 
 		const glm::mat4 antMatrix = CE::TransformComponent::ToMatrix(interpolatedPos, 
-			glm::vec3{ 0.809523811f, 1.0f, 1.0f }, interpolatedRot);
+			glm::vec3{ 1.0f, 0.809523811f, 1.0f }, interpolatedRot);
 
 		uint32 frame = static_cast<uint32>(static_cast<float>(entt::to_integral(entity) % mAntWalkFrames.size()) 
 			+ totalTimePassed * renderingComponent.mAntAnimationSpeed) % mAntWalkFrames.size();
