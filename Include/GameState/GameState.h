@@ -14,7 +14,8 @@ namespace Ant
 
 		void Step(const GameStep& step);
 
-		uint64 GetNumOfStepsCompleted() const { return mNumStepsCompleted; }
+		uint32 GetNumOfStepsCompleted() const { return mNumStepsCompleted; }
+		uint32 GetScore() const { return mScore; }
 
 		CE::World& GetWorld() { return mWorld; }
 		const CE::World& GetWorld() const { return mWorld; }
@@ -24,6 +25,7 @@ namespace Ant
 		void AgeAnts();
 
 		CE::World mWorld;
-		uint64 mNumStepsCompleted{};
+		uint32 mNumStepsCompleted{};
+		uint32 mScore{};
 	};
 }

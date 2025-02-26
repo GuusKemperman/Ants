@@ -77,6 +77,12 @@ void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 			mRenderingState->Step(mRenderingQueue[i]);
 		}
 	}
+
+	CE::Registry& reg = mRenderingState->GetWorld().GetRegistry();
+	renderingComponent.mNumOfAnts = static_cast<uint32>(reg.View<AntBaseComponent>().size());
+	renderingComponent.mNumOfPheromones = static_cast<uint32>(reg.View<PheromoneComponent>().size() - reg.View<InactivePheromoneTag>().size());
+	renderingComponent.mNumFoodInWorld = static_cast<uint32>(reg.View<FoodPelletTag>().size());
+	renderingComponent.mScore = mRenderingState->GetScore();
 }
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const

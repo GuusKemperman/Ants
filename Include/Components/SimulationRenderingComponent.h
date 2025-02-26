@@ -11,6 +11,13 @@ namespace Ant
 
 		float mAntAnimationSpeed = 5.0f;
 
+		uint32 mNumOfAnts{};
+		uint32 mNumOfPheromones{};
+
+		uint32 mNumFoodInWorld{};
+		
+		uint32 mScore{};
+
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

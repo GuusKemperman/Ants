@@ -39,6 +39,8 @@ void Ant::GameState::Step(const GameStep& step)
 		mWorld.BeginPlay();
 	}
 
+	mScore += static_cast<uint32>(step.GetBuffer<SpawnAntCommand>().GetNumSubmittedCommands());
+
 	step.ForEachCommandBuffer(
 		[&](const auto& commandBuffer)
 		{

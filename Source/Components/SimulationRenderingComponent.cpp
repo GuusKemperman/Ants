@@ -12,6 +12,18 @@ CE::MetaType Ant::SimulationRenderingComponent::Reflect()
 	metaType.AddField(&SimulationRenderingComponent::mDesiredPlaySpeed, "mDesiredPlaySpeed");
 	metaType.AddField(&SimulationRenderingComponent::mAntAnimationSpeed, "mAntAnimationSpeed");
 
+	metaType.AddField(&SimulationRenderingComponent::mNumOfAnts, "mNumOfAnts")
+		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+
+	metaType.AddField(&SimulationRenderingComponent::mNumOfPheromones, "mNumOfPheromones")
+		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+
+	metaType.AddField(&SimulationRenderingComponent::mNumFoodInWorld, "mNumFoodInWorld")
+		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+
+	metaType.AddField(&SimulationRenderingComponent::mScore, "mScore")
+		.GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	
 	CE::ReflectComponentType<SimulationRenderingComponent>(metaType);
 	return metaType;
 }
