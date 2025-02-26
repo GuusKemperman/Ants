@@ -168,7 +168,7 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			interpolationFactor);
 
 		glm::vec3 orientationEuler{};
-		orientationEuler[CE::Axis::Up] = interpolatedAngle - glm::half_pi<float>();
+		orientationEuler[CE::Axis::Up] = interpolatedAngle - glm::pi<float>();
 
 		glm::quat interpolatedRot{ orientationEuler };
 
