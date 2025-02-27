@@ -9,6 +9,7 @@
 #include "Components/SimulationRenderingComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/AssetManager.h"
+#include "Core/Input.h"
 #include "Core/Renderer.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "World/Registry.h"
@@ -31,9 +32,9 @@ Ant::SimulationRenderingSystem::SimulationRenderingSystem()
 	mAntMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Plane");
 
 	mPheromoneLODs[0] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD0"), 0.0f };
-	mPheromoneLODs[1] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD1"), 50.0f };
-	mPheromoneLODs[2] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD2"), 200.0f };
-	mPheromoneLODs[3] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD3"), 500.0f };
+	mPheromoneLODs[1] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD1"), 20.0f };
+	mPheromoneLODs[2] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD2"), 150.0f };
+	mPheromoneLODs[3] = { assetManager.TryGetAsset<CE::StaticMesh>("SM_PheromoneLOD3"), 300.0f };
 
 	mFoodMesh = assetManager.TryGetAsset<CE::StaticMesh>("SM_Cube");
 }
@@ -46,43 +47,8 @@ void Ant::SimulationRenderingSystem::RecordStep(const GameStep& step)
 
 void Ant::SimulationRenderingSystem::Update(CE::World& world, float dt)
 {
-	auto renderingView = world.GetRegistry().View<AntSimulationComponent, SimulationRenderingComponent>();
-	entt::entity renderingEntity = renderingView.front();
-
-	if (renderingEntity == entt::null)
-	{
-		return;
-	}
-
-	auto [simulationComponent, renderingComponent] = renderingView.get(renderingEntity);
-
-	renderingComponent.mTimeStamp = glm::max(0.0f, renderingComponent.mTimeStamp + renderingComponent.mDesiredPlaySpeed * dt);
-	uint64 requiredNumSteps = glm::clamp(static_cast<int64>(renderingComponent.mTimeStamp), 
-		0ll, 
-		static_cast<int64>(mRenderingQueue.size()));
-	uint64 currentNumSteps = mRenderingState->GetNumOfStepsCompleted();
-
-	if (currentNumSteps > requiredNumSteps)
-	{
-		mRenderingState = std::make_unique<GameState>();
-		currentNumSteps = 0;
-	}
-
-	if (currentNumSteps != requiredNumSteps)
-	{
-		std::lock_guard guard{ mRenderingQueueMutex };
-
-		for (uint64 i = currentNumSteps; i < requiredNumSteps; i++)
-		{
-			mRenderingState->Step(mRenderingQueue[i]);
-		}
-	}
-
-	CE::Registry& reg = mRenderingState->GetWorld().GetRegistry();
-	renderingComponent.mNumOfAnts = static_cast<uint32>(reg.View<AntBaseComponent>().size());
-	renderingComponent.mNumOfPheromones = static_cast<uint32>(reg.View<PheromoneComponent>().size() - reg.View<InactivePheromoneTag>().size());
-	renderingComponent.mNumFoodInWorld = static_cast<uint32>(reg.View<FoodPelletTag>().size());
-	renderingComponent.mScore = mRenderingState->GetScore();
+	StepToCorrectGameState(world, dt);
+	UpdateCameraMovement(world, dt);
 }
 
 void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::RenderCommandQueue& renderQueue) const
@@ -99,11 +65,11 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 		return;
 	}
 
-	auto camView = viewportWorld.GetRegistry().View<CE::TransformComponent, CE::CameraComponent>();
+	auto camView = viewportWorld.GetRegistry().View<CE::CameraComponent>();
 	entt::entity camEntity = CE::CameraComponent::GetSelected(viewportWorld);
 	ASSERT(camView.contains(camEntity));
 	
-	const CE::TransformComponent& camTransform = camView.get<CE::TransformComponent>(camEntity);
+	const CE::CameraComponent& cam = camView.get<CE::CameraComponent>(camEntity);
 
 	if (CE::IsDebugDrawCategoryVisible(CE::DebugDraw::Particles))
 	{
@@ -111,12 +77,11 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 			glm::vec3{ PheromoneComponent::sRadius, PheromoneComponent::sRadius, 0.1f },
 			glm::quat{ glm::vec3{ glm::pi<float>(), 0.0f, 0.0f } });
 
-		const float camHeight = camTransform.GetWorldPosition().z;
 		CE::AssetHandle pheromoneMesh = mPheromoneLODs[0].mMesh;
 
 		for (auto& lod : mPheromoneLODs)
 		{
-			if (camHeight < lod.Dist)
+			if (cam.mOrthoGraphicSize < lod.Dist)
 			{
 				break;
 			}
@@ -291,6 +256,87 @@ void Ant::SimulationRenderingSystem::Render(const CE::World& viewportWorld, CE::
 	}
 	
 }
+
+void Ant::SimulationRenderingSystem::StepToCorrectGameState(CE::World& world, float dt)
+{
+	auto renderingView = world.GetRegistry().View<AntSimulationComponent, SimulationRenderingComponent>();
+	entt::entity renderingEntity = renderingView.front();
+
+	if (renderingEntity == entt::null)
+	{
+		return;
+	}
+
+	auto [simulationComponent, renderingComponent] = renderingView.get(renderingEntity);
+
+	renderingComponent.mTimeStamp = glm::max(0.0f, renderingComponent.mTimeStamp + renderingComponent.mDesiredPlaySpeed * dt);
+	uint64 requiredNumSteps = glm::clamp(static_cast<int64>(renderingComponent.mTimeStamp),
+		0ll,
+		static_cast<int64>(mRenderingQueue.size()));
+	uint64 currentNumSteps = mRenderingState->GetNumOfStepsCompleted();
+
+	if (currentNumSteps > requiredNumSteps)
+	{
+		mRenderingState = std::make_unique<GameState>();
+		currentNumSteps = 0;
+	}
+
+	if (currentNumSteps != requiredNumSteps)
+	{
+		std::lock_guard guard{ mRenderingQueueMutex };
+
+		for (uint64 i = currentNumSteps; i < requiredNumSteps; i++)
+		{
+			mRenderingState->Step(mRenderingQueue[i]);
+		}
+	}
+
+	CE::Registry& reg = mRenderingState->GetWorld().GetRegistry();
+	renderingComponent.mNumOfAnts = static_cast<uint32>(reg.View<AntBaseComponent>().size());
+	renderingComponent.mNumOfPheromones = static_cast<uint32>(reg.View<PheromoneComponent>().size() - reg.View<InactivePheromoneTag>().size());
+	renderingComponent.mNumFoodInWorld = static_cast<uint32>(reg.View<FoodPelletTag>().size());
+	renderingComponent.mScore = mRenderingState->GetScore();
+}
+
+void Ant::SimulationRenderingSystem::UpdateCameraMovement(CE::World& world, float dt) const
+{
+	static constexpr float movementSpeed = 2.0f;
+	static constexpr float zoomFactor = 1.2f;
+
+	auto camView = world.GetRegistry().View<CE::TransformComponent, CE::CameraComponent>();
+	entt::entity camEntity = CE::CameraComponent::GetSelected(world);
+	ASSERT(camView.contains(camEntity));
+
+	auto [transform, camera] = camView.get(camEntity);
+	CE::Input& input = CE::Input::Get();
+
+	const glm::vec2 movementKeys
+	{
+		input.GetKeyboardAxis(CE::Input::KeyboardKey::W, CE::Input::KeyboardKey::S),
+		input.GetKeyboardAxis(CE::Input::KeyboardKey::D, CE::Input::KeyboardKey::A),
+	};
+
+	glm::vec3 cameraPos = transform.GetWorldPosition();
+	cameraPos += CE::To3D(movementKeys * dt * (movementSpeed * camera.mOrthoGraphicSize));
+
+	const float zoomInput = input.GetMouseWheel();
+
+	if (zoomInput > 0.0f)
+	{
+		camera.mOrthoGraphicSize /= zoomFactor;
+	}
+	else if (zoomInput < 0.0f)
+	{
+		camera.mOrthoGraphicSize *= zoomFactor;
+	}
+
+	const float cameraHeight = cameraPos[CE::Axis::Up];
+	camera.mNear = cameraHeight - 5.0f;
+	camera.mFar = cameraHeight + 5.0f;
+
+	transform.SetWorldPosition(cameraPos);
+}
+
 
 float Internal::InterpolateAngle(float a1, float a2, float alpha)
 {

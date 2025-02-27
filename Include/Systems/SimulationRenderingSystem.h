@@ -21,6 +21,9 @@ namespace Ant
 		void Render(const CE::World& world, CE::RenderCommandQueue& renderQueue) const override;
 
 	private:
+		void StepToCorrectGameState(CE::World& world, float dt);
+		void UpdateCameraMovement(CE::World& world, float dt) const;
+
 		CE::AssetHandle<CE::Material> mMat{};
 
 		std::array<CE::AssetHandle<CE::Material>, 3> mAntWalkFrames{};
