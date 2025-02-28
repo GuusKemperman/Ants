@@ -20,8 +20,6 @@ namespace Ant
 	class AntSimulationComponent
 	{
 	public:
-		~AntSimulationComponent();
-
 		void OnBeginPlay(CE::World& world, entt::entity owner);
 
 		const GameState& GetGameState() const { return mCurrentState; }
@@ -51,8 +49,7 @@ namespace Ant
 		GameState mCurrentState{};
 		std::function<void(const GameStep&)> mOnStepCompletedCallback{};
 
-		std::thread mSimulateThread{};
-		bool mSimulationStopped{};
+		std::jthread mSimulateThread{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

@@ -2,12 +2,10 @@
 #include "Components/AntSimulationComponent.h"
 
 #include <execution>
-#include <numeric>
 #include <entt/entity/runtime_view.hpp>
 
 #include "Commands/GameStep.h"
 #include "Commands/SpawnFoodCommand.h"
-#include "Components/AntBaseComponent.h"
 #include "Components/AntNestComponent.h"
 #include "Components/FoodPelletTag.h"
 #include "Components/SimulationRenderingComponent.h"
@@ -16,15 +14,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/EventManager.h"
 #include "World/Physics.h"
-
-Ant::AntSimulationComponent::~AntSimulationComponent()
-{
-	mSimulationStopped = true;
-	if (mSimulateThread.joinable())
-	{
-		mSimulateThread.join();
-	}
-}
 
 void Ant::AntSimulationComponent::OnBeginPlay(CE::World& world, entt::entity)
 {
@@ -90,11 +79,11 @@ void Ant::AntSimulationComponent::StartSimulation(CE::World* viewportWorld)
 		mOnStepCompletedCallback = [&](const GameStep& step) { rendering.RecordStep(step); };
 	}
 
-	mSimulateThread = std::thread
+	mSimulateThread = std::jthread
 	{
-		[this]
+		[this](const std::stop_token& stopToken)
 		{
-			while (!mSimulationStopped)
+			while (!stopToken.stop_requested())
 			{
 				CE::World& world = mCurrentState.GetWorld();
 				GameStep* nextStep = TryGetNextGameStep(world);
