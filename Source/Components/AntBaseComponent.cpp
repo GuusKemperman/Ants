@@ -89,7 +89,7 @@ Ant::SenseResult Ant::AntBaseComponent::Sense(CE::World& world, entt::entity own
 
 	CE::CollisionRules rules{};
 	rules.mLayer = CE::CollisionLayer::Query;
-	rules.SetResponse(CE::CollisionLayer::Projectiles, CE::CollisionResponse::Overlap);
+	rules.SetResponse(CE::CollisionLayer::WorldDynamic, CE::CollisionResponse::Overlap);
 
 	const CE::Physics::LineTraceResult physicsResult = world.GetPhysics().LineTrace({ startWorld, endWorld }, rules);
 

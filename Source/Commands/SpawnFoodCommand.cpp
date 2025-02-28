@@ -28,7 +28,7 @@ void Ant::SpawnFoodCommand::Execute(CE::World& world, std::span<const SpawnFoodC
 		CE::PhysicsBody2DComponent& body = physics.emplace(entity);
 		body.mIsAffectedByForces = false;
 		body.mRules = {};
-		body.mRules.mLayer = CE::CollisionLayer::Projectiles;
+		body.mRules.mLayer = CE::CollisionLayer::WorldDynamic;
 		body.mRules.SetResponse(CE::CollisionLayer::Query, CE::CollisionResponse::Overlap);
 	}
 }
