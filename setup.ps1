@@ -69,14 +69,7 @@ if (!(Test-Path "$external_dir"))
 
 Write-Host "External directory: $external_dir"
 
-# download_archive $external_dir "sdl-windows" "SDL2-2.0.20" "https://www.libsdl.org/release/SDL2-devel-2.0.20-VC.zip"
-# download_archive $external_dir "spdlog-windows" "spdlog-1.x" "https://github.com/gabime/spdlog/archive/refs/heads/v1.x.zip"
-# download_archive $external_dir "gsl-windows" "GSL-main" "https://github.com/microsoft/GSL/archive/refs/heads/main.zip"
-# download_archive $external_dir "crc-windows" "CRCpp-master" "https://github.com/d-bahr/CRCpp/archive/refs/heads/master.zip"
-# download_archive $external_dir "glm-windows" "glm-master" "https://github.com/g-truc/glm/archive/refs/heads/master.zip"
-# download_archive $external_dir "entt-windows" "entt-master" "https://github.com/skypjack/entt/archive/refs/heads/master.zip"
-# download_archive $external_dir "stb-windows" "stb-master" "https://github.com/nothings/stb/archive/refs/heads/master.zip"
-download_archive $external_dir "CoralEngine" "CoralEngine-main-lite" "https://github.com/GuusKemperman/CoralEngine/archive/refs/heads/main-lite.zip"
+download_archive $external_dir "CoralEngine" "CoralEngine-1.0.0" "https://github.com/GuusKemperman/CoralEngine/archive/refs/tags/v1.0.0.zip"
 
 Write-Host "Setup script completed" -ForegroundColor Green
 Read-Host -Prompt "Press Enter to exit"
