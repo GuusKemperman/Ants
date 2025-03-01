@@ -56,42 +56,42 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="..\..\Properties\EngineAndGameDebug.props" />
-    <Import Project="..\..\Properties\EngineAndGamePC.props" />
-    <Import Project="..\..\Properties\EngineAndGame.props" />
-    <Import Project="..\..\Properties\GamePC.props" />
-    <Import Project="..\..\Properties\Game.props" />
-    <Import Project="..\..\Properties\GameDebugPC.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameDebug.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGamePC.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGame.props" />
+    <Import Project="External/CoralEngine/Properties\GamePC.props" />
+    <Import Project="External/CoralEngine/Properties\Game.props" />
+    <Import Project="External/CoralEngine/Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
-    <Import Project="..\..\Properties\GameEditorRelease.props" />
-    <Import Project="..\..\Properties\GameEditor.props" />
-    <Import Project="..\..\Properties\EngineAndGame.props" />
-    <Import Project="..\..\Properties\EngineAndGameEditor.props" />
-    <Import Project="..\..\Properties\EngineAndGamePC.props" />
-    <Import Project="..\..\Properties\EngineAndGameRelease.props" />
-    <Import Project="..\..\Properties\GamePC.props" />
-    <Import Project="..\..\Properties\Game.props" />
-    <Import Project="..\..\Properties\GameReleasePC.props" />
+    <Import Project="External/CoralEngine/Properties\GameEditorRelease.props" />
+    <Import Project="External/CoralEngine/Properties\GameEditor.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGame.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameEditor.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGamePC.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameRelease.props" />
+    <Import Project="External/CoralEngine/Properties\GamePC.props" />
+    <Import Project="External/CoralEngine/Properties\Game.props" />
+    <Import Project="External/CoralEngine/Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="..\..\Properties\EngineAndGame.props" />
-    <Import Project="..\..\Properties\EngineAndGamePC.props" />
-    <Import Project="..\..\Properties\EngineAndGameRelease.props" />
-    <Import Project="..\..\Properties\GamePC.props" />
-    <Import Project="..\..\Properties\Game.props" />
-    <Import Project="..\..\Properties\GameReleasePC.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGame.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGamePC.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameRelease.props" />
+    <Import Project="External/CoralEngine/Properties\GamePC.props" />
+    <Import Project="External/CoralEngine/Properties\Game.props" />
+    <Import Project="External/CoralEngine/Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
-    <Import Project="..\..\Properties\GameEditorDebug.props" />
-    <Import Project="..\..\Properties\GameEditor.props" />
-    <Import Project="..\..\Properties\EngineAndGame.props" />
-    <Import Project="..\..\Properties\EngineAndGameDebug.props" />
-    <Import Project="..\..\Properties\EngineAndGameEditor.props" />
-    <Import Project="..\..\Properties\EngineAndGamePC.props" />
-    <Import Project="..\..\Properties\GamePC.props" />
-    <Import Project="..\..\Properties\Game.props" />
-    <Import Project="..\..\Properties\GameDebugPC.props" />
+    <Import Project="External/CoralEngine/Properties\GameEditorDebug.props" />
+    <Import Project="External/CoralEngine/Properties\GameEditor.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGame.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameDebug.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGameEditor.props" />
+    <Import Project="External/CoralEngine/Properties\EngineAndGamePC.props" />
+    <Import Project="External/CoralEngine/Properties\GamePC.props" />
+    <Import Project="External/CoralEngine/Properties\Game.props" />
+    <Import Project="External/CoralEngine/Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
