@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 	config.BanType<CE::PhysicsSystem>();
 
 	CE::Engine engine{ config };
-	engine.Run("TestLevel");
+	engine.Run("L_Training");
 
 	return 0;
 }
