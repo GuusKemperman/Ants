@@ -12,6 +12,7 @@
 #include "Core/Input.h"
 #include "Core/Renderer.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Math.h"
 #include "World/Registry.h"
 #include "World/World.h"
 

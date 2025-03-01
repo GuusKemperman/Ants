@@ -10,6 +10,7 @@
 #include "Components/FoodPelletTag.h"
 #include "Components/SimulationRenderingComponent.h"
 #include "Systems/SimulationRenderingSystem.h"
+#include "Utilities/Math.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/EventManager.h"

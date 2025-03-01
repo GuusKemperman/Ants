@@ -8,6 +8,7 @@
 #include "World/World.h"
 #include "World/Physics.h"
 #include "Components/TransformComponent.h"
+#include "Utilities/Math.h"
 #include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
